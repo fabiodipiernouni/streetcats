@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Stili personalizzati STREETCATS */
+@layer components {
+	.btn-primary {
+		@apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded transition-colors;
+	}
+
+	.card-cat {
+		@apply bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow;
+	}
+
+	.streetcats-orange {
+		@apply text-orange-500;
+	}
+
+	.streetcats-green {
+		@apply text-green-500;
+	}
+}

@@ -1,0 +1,83 @@
+﻿@page "/"
+
+<PageTitle>STREETCATS - Home</PageTitle>
+
+<div class="container mx-auto p-8 bg-gray-50 min-h-screen">
+    <div class="text-center mb-8">
+        <h1 class="text-5xl font-bold text-streetcats-orange mb-4">
+            🐱 STREETCATS
+        </h1>
+        <p class="text-gray-600 text-xl">
+            Piattaforma per l'avvistamento di gatti randagi
+        </p>
+    </div>
+    
+    <div class="grid md:grid-cols-2 gap-6">
+        <!-- Card Benvenuto -->
+        <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+                👋 Benvenuto!
+            </h2>
+            <p class="text-gray-600 mb-4">
+                Questa è STREETCATS, la tua applicazione per segnalare e tracciare gatti randagi nella zona.
+            </p>
+            
+            <div class="space-y-2">
+                <button class="w-full bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    🗺️ Visualizza Mappa
+                </button>
+                <button class="w-full bg-streetcats-green hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    ➕ Segnala Gatto
+                </button>
+            </div>
+        </div>
+        
+        <!-- Card Statistiche -->
+        <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+                📊 Statistiche
+            </h2>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Gatti segnalati:</span>
+                    <span class="font-bold text-streetcats-orange text-xl">42</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Zone attive:</span>
+                    <span class="font-bold text-streetcats-green text-xl">7</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Ultimi avvistamenti:</span>
+                    <span class="font-bold text-blue-600 text-xl">5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sezione Recent Activity -->
+    <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">
+            🕒 Attività Recente
+        </h2>
+        <div class="space-y-4">
+            <div class="border-l-4 border-streetcats-orange pl-4 py-2">
+                <p class="text-gray-600">
+                    <span class="font-semibold">Mario Rossi</span> ha segnalato un gatto arancione in Via Roma
+                </p>
+                <p class="text-sm text-gray-400">2 ore fa</p>
+            </div>
+            <div class="border-l-4 border-streetcats-green pl-4 py-2">
+                <p class="text-gray-600">
+                    <span class="font-semibold">Lucia Verdi</span> ha confermato l'avvistamento in Piazza Garibaldi
+                </p>
+                <p class="text-sm text-gray-400">4 ore fa</p>
+            </div>
+            <div class="border-l-4 border-blue-500 pl-4 py-2">
+                <p class="text-gray-600">
+                    <span class="font-semibold">Giovanni Bianchi</span> ha aggiunto una foto al gatto "Micio"
+                </p>
+                <p class="text-sm text-gray-400">6 ore fa</p>
+            </div>
+        </div>
+    </div>
+</div>
