@@ -130,6 +130,7 @@ appsettings.Development.json
 secrets.json
 
 ## Editor backup files
+.editorconfig
 *.swp
 *.swo
 *.bak
