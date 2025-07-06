@@ -28,6 +28,29 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# ASP.NET / Blazor specific
+wwwroot/
+node_modules/
+dist/
+bundle/
+coverage/
+
+# Visual Studio
+.vs/
+.vscode/
+*.dbmdl
+*.jfm
+*.ipr
+*.iws
+*.sln.ide
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+*.vsix
+
+
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
@@ -36,10 +59,59 @@ ScaffoldingReadMe.txt
 # NuGet Symbol Packages
 *.snupkg
 
+*.nuspec
+*.psmdcp
+
+## .NET 9 Static Asset Optimization
+staticwebassets.build.json
+staticwebassets.development.json
+staticwebassets.pack.json
+staticwebassets.publish.json
+importmap.json
+assets.json
+
+## .NET 9 Webcil WebAssembly files
+*.wasm
+*.webcil
+!wwwroot/custom*.wasm
+
+## Node.js and npm dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+.stylelintcache
+
+## Tailwind CSS build artifacts
+dist/css/
+wwwroot/css/app.css
+wwwroot/css/tailwind.css
+.tailwindcss-cache/
+*.generated.css
+*-[0-9a-f]*.css
+tailwind.config.js.backup
+
+## TypeScript and JavaScript interop
+*.js.map
+*.d.ts
+!src/**/*.d.ts
+*.tsbuildinfo
+.tscache/
+wwwroot/js/
+Scripts/
+
 # Others
 ~$*
 *~
 CodeCoverage/
+_ReSharper*/
+*.idea/
+*.DS_Store
+Thumbs.db
+desktop.ini
+
 
 # MSBuild Binary and Structured Log
 *.binlog
@@ -52,3 +124,16 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# exclude secrets and config
+appsettings.Development.json
+secrets.json
+
+## Editor backup files
+*.swp
+*.swo
+*.bak
+*.backup
+*.orig
+*.tmp
+*.temp
