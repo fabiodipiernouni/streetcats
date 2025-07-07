@@ -45,7 +45,7 @@ public class AuthServiceMock : IAuthService
                 _token = savedToken;
                 _currentUser = JsonSerializer.Deserialize<User>(savedUser);
 
-                // Verifica se il token Ë ancora valido (mock - sempre true per semplicit‡)
+                // Verifica se il token √® ancora valido (mock - sempre true per semplicit√†)
                 if (await ValidateTokenAsync())
                 {
                     AuthenticationStateChanged?.Invoke(true);
@@ -55,7 +55,7 @@ public class AuthServiceMock : IAuthService
         }
         catch (Exception)
         {
-            // Se c'Ë un errore nel caricamento, pulisci lo stato
+            // Se c'√® un errore nel caricamento, pulisci lo stato
             await LogoutAsync();
         }
     }
@@ -145,14 +145,14 @@ public class AuthServiceMock : IAuthService
             };
         }
 
-        // Simula controllo username esistente (mock - alcuni username sono "gi‡ presi")
+        // Simula controllo username esistente (mock - alcuni username sono "gi√† presi")
         var existingUsers = new[] { "admin", "test", "demo" };
         if (existingUsers.Contains(request.Username.ToLower()))
         {
             return new ApiResponse<AuthResponse>
             {
                 Success = false,
-                Message = "Nome utente gi‡ in uso",
+                Message = "Nome utente gi√† in uso",
                 Errors = new List<string> { "Username non disponibile" }
             };
         }
