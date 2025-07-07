@@ -1,13 +1,15 @@
 using System;
 using System.Threading.Tasks;
+using StreetCats.Client.Services.Interfaces;
+using StreetCats.Client.Models;
 
 namespace StreetCats.Client.Services.Implementation;
 
 /// <summary>
 /// Implementazione REALE del servizio mappe (da implementare)
-/// User‡ API reali come Google Maps, OpenStreetMap, etc.
+/// User√† API reali come Google Maps, OpenStreetMap, etc.
 /// </summary>
-public class MapService : IMapService
+public class MapService
 {
     private readonly HttpClient _httpClient;
 

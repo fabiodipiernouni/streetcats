@@ -1,28 +1,74 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">StreetCats.Client</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
-
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="nav flex-column">
+    <nav class="flex-column">
+        <!-- 🐱 STREETCATS Brand Header -->
+        <div class="nav-brand px-3 py-3 mb-3">
+            <div class="d-flex align-items-center">
+                <span class="brand-emoji me-2">🐱</span>
+                <div class="brand-text">
+                    <strong class="brand-title">STREET<span class="brand-accent">CATS</span></strong>
+                    <div class="brand-subtitle">Gatti randagi Napoli</div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="nav-divider" />
+
+        <!-- 📍 Navigation Links -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu me-2" aria-hidden="true"></span>
+                🏠 Home
             </NavLink>
         </div>
+        
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="cats">
+                <span class="bi bi-grid-3x3-gap-fill-nav-menu me-2" aria-hidden="true"></span>
+                🐱 Tutti i Gatti
             </NavLink>
         </div>
+        
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link" href="map">
+                <span class="bi bi-geo-alt-fill-nav-menu me-2" aria-hidden="true"></span>
+                🗺️ Mappa
             </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="add-cat">
+                <span class="bi bi-plus-circle-fill-nav-menu me-2" aria-hidden="true"></span>
+                ➕ Segnala Gatto
+            </NavLink>
+        </div>
+
+        <hr class="nav-divider" />
+
+        <!-- 👤 User Section -->
+        <div class="nav-section-title px-3 py-2">
+            <small class="text-muted">Accesso</small>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="login">
+                <span class="bi bi-person-fill-nav-menu me-2" aria-hidden="true"></span>
+                🔑 Login
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="register">
+                <span class="bi bi-person-plus-fill-nav-menu me-2" aria-hidden="true"></span>
+                📝 Registrati
+            </NavLink>
+        </div>
+
+        <!-- 📊 Footer Info -->
+        <div class="nav-footer px-3 py-3 mt-auto">
+            <small class="text-muted">
+                🎓 Progetto Universitario<br/>
+                Tecnologie Web 2025
+            </small>
         </div>
     </nav>
 </div>

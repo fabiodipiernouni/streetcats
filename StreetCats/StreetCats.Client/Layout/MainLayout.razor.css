@@ -1,77 +1,141 @@
-.page {
-    position: relative;
-    display: flex;
-    flex-direction: column;
+/* STREETCATS Modern Layout Styles */
+
+/* Navigation Links Styling */
+.nav-link {
+    @apply text-gray-700 hover:text-streetcats-orange px-3 py-2 rounded-md text-sm font-medium transition-all duration-200;
+    text-decoration: none !important;
 }
 
-main {
-    flex: 1;
+    .nav-link:hover {
+        @apply bg-orange-50 transform scale-105;
+    }
+
+/* Active state per NavLink */
+::deep .nav-link.active {
+    @apply text-streetcats-orange bg-orange-50 font-semibold;
 }
 
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+/* Mobile Navigation Links */
+.mobile-nav-link {
+    @apply block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-streetcats-orange hover:bg-orange-50 transition-colors duration-200;
+    text-decoration: none !important;
 }
 
-.top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
-    justify-content: flex-end;
-    height: 3.5rem;
-    display: flex;
-    align-items: center;
+::deep .mobile-nav-link.active {
+    @apply text-streetcats-orange bg-orange-50 font-semibold;
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
+/* Button Styles */
+.btn-primary {
+    @apply bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105;
+    text-decoration: none !important;
+}
+
+.btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105;
+    text-decoration: none !important;
+}
+
+/* Brand Link */
+a.no-underline {
+    text-decoration: none !important;
+}
+
+    a.no-underline:hover {
+        text-decoration: none !important;
     }
 
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
+/* Loading Animation Enhancement */
+@keyframes pulse-orange {
+    0%, 100% {
+        border-color: #f97316;
     }
 
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
-    }
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
+    50% {
+        border-color: #22c55e;
     }
 }
 
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
+.animate-spin {
+    animation: spin 1s linear infinite, pulse-orange 2s ease-in-out infinite;
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+    .nav-link {
+        @apply text-sm px-2 py-1;
     }
 
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-    }
-
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
-
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
+    .btn-primary,
+    .btn-secondary {
+        @apply text-sm py-1 px-3;
     }
 }
+
+/* Smooth Transitions */
+* {
+    transition-property: color, background-color, border-color, transform, box-shadow;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus States for Accessibility */
+.nav-link:focus,
+.mobile-nav-link:focus,
+.btn-primary:focus,
+.btn-secondary:focus {
+    @apply outline-none ring-2 ring-streetcats-orange ring-opacity-50;
+}
+
+/* Footer Enhancements */
+footer {
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+}
+
+/* Container Max Width Override */
+.container {
+    max-width: 1200px;
+}
+
+/* Custom STREETCATS Utilities */
+.text-streetcats-orange {
+    color: #f97316;
+}
+
+.text-streetcats-green {
+    color: #22c55e;
+}
+
+.bg-streetcats-orange {
+    background-color: #f97316;
+}
+
+.bg-streetcats-green {
+    background-color: #22c55e;
+}
+
+.border-streetcats-orange {
+    border-color: #f97316;
+}
+
+.border-streetcats-green {
+    border-color: #22c55e;
+}
+
+/* Hover Effects */
+.hover\:bg-orange-50:hover {
+    background-color: #fff7ed;
+}
+
+.hover\:bg-orange-600:hover {
+    background-color: #ea580c;
+}
+
+/* Mobile Menu Animation */
+.mobile-nav-link {
+    transform: translateX(0);
+    transition: all 0.3s ease;
+}
+
+    .mobile-nav-link:hover {
+        transform: translateX(4px);
+    }

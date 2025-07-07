@@ -1,16 +1,247 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+@using StreetCats.Client.Services.Interfaces
+@inject IAuthService AuthService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+@inherits LayoutComponentBase
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<div class="min-h-screen flex flex-col bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg border-b-2 border-streetcats-orange">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo e Brand -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-3 no-underline">
+                        <div class="text-2xl">🐱</div>
+                        <div class="text-xl font-bold text-streetcats-orange">
+                            STREET<span class="text-streetcats-green">CATS</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Navigation Links Desktop -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">
+                        🏠 Home
+                    </NavLink>
+                    <NavLink href="/cats" class="nav-link">
+                        🐱 Tutti i Gatti
+                    </NavLink>
+                    <NavLink href="/map" class="nav-link">
+                        🗺️ Mappa
+                    </NavLink>
+                    
+                    @if (isAuthenticated)
+                    {
+                        <NavLink href="/add-cat" class="nav-link">
+                            ➕ Segnala Gatto
+                        </NavLink>
+                    }
+                </div>
+
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    @if (isAuthenticated)
+                    {
+                        <!-- User autenticato -->
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm text-gray-600">
+                                Ciao, <span class="font-semibold text-streetcats-orange">@currentUserName</span>
+                            </span>
+                            <button @onclick="HandleLogout" 
+                                    class="text-sm text-gray-500 hover:text-red-600 transition-colors">
+                                🚪 Logout
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- User non autenticato -->
+                        <div class="flex items-center space-x-2">
+                            <NavLink href="/login" class="btn-secondary">
+                                🔑 Login
+                            </NavLink>
+                            <NavLink href="/register" class="btn-primary">
+                                📝 Registrati
+                            </NavLink>
+                        </div>
+                    }
+
+                    <!-- Mobile menu button -->
+                    <button @onclick="ToggleMobileMenu" 
+                            class="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
+        <!-- Mobile Navigation Menu -->
+        @if (showMobileMenu)
+        {
+            <div class="md:hidden border-t border-gray-200 bg-white">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <NavLink href="/" class="mobile-nav-link" @onclick="CloseMobileMenu" Match="NavLinkMatch.All">
+                        🏠 Home
+                    </NavLink>
+                    <NavLink href="/cats" class="mobile-nav-link" @onclick="CloseMobileMenu">
+                        🐱 Tutti i Gatti
+                    </NavLink>
+                    <NavLink href="/map" class="mobile-nav-link" @onclick="CloseMobileMenu">
+                        🗺️ Mappa
+                    </NavLink>
+                    
+                    @if (isAuthenticated)
+                    {
+                        <NavLink href="/add-cat" class="mobile-nav-link" @onclick="CloseMobileMenu">
+                            ➕ Segnala Gatto
+                        </NavLink>
+                        <div class="border-t border-gray-200 pt-2 mt-2">
+                            <div class="px-3 py-2 text-sm text-gray-600">
+                                Utente: <span class="font-semibold">@currentUserName</span>
+                            </div>
+                            <button @onclick="HandleLogout" 
+                                    class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
+                                🚪 Logout
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="border-t border-gray-200 pt-2 mt-2 space-y-1">
+                            <NavLink href="/login" class="mobile-nav-link" @onclick="CloseMobileMenu">
+                                🔑 Login
+                            </NavLink>
+                            <NavLink href="/register" class="mobile-nav-link" @onclick="CloseMobileMenu">
+                                📝 Registrati
+                            </NavLink>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 container mx-auto px-4 py-6">
+        @Body
     </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="text-lg font-semibold mb-2">
+                    🐱 STREETCATS
+                </div>
+                <p class="text-gray-400 text-sm mb-4">
+                    Piattaforma per l'avvistamento e la cura dei gatti randagi di Napoli
+                </p>
+                <div class="text-xs text-gray-500">
+                    Progetto universitario - Tecnologie Web © 2025
+                </div>
+            </div>
+        </div>
+    </footer>
 </div>
+
+<!-- Loading Overlay globale -->
+@if (isLoading)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 text-center shadow-xl">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-streetcats-orange mx-auto mb-4"></div>
+            <p class="text-gray-600 font-medium">Caricamento...</p>
+        </div>
+    </div>
+}
+
+@code {
+    private bool showMobileMenu = false;
+    private bool isLoading = false;
+    private bool isAuthenticated = false;
+    private string currentUserName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Inizializza AuthService
+        try
+        {
+            await AuthService.InitializeAsync();
+            UpdateAuthState();
+            
+            // Ascolta cambiamenti stato autenticazione
+            AuthService.AuthenticationStateChanged += OnAuthenticationStateChanged;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore inizializzazione auth: {ex.Message}");
+        }
+    }
+
+    private void UpdateAuthState()
+    {
+        isAuthenticated = AuthService.IsAuthenticated;
+        currentUserName = AuthService.CurrentUser?.Username ?? "";
+    }
+
+    private void ToggleMobileMenu()
+    {
+        showMobileMenu = !showMobileMenu;
+    }
+
+    private void CloseMobileMenu()
+    {
+        showMobileMenu = false;
+    }
+
+    private async Task HandleLogout()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthService.LogoutAsync();
+            UpdateAuthState();
+            
+            // Redirect alla home dopo logout
+            await JSRuntime.InvokeVoidAsync("location.assign", "/");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore logout: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            CloseMobileMenu();
+            StateHasChanged();
+        }
+    }
+
+    private void OnAuthenticationStateChanged(bool authenticated)
+    {
+        InvokeAsync(() =>
+        {
+            UpdateAuthState();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        if (AuthService != null)
+        {
+            AuthService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        }
+    }
+}

@@ -1,0 +1,118 @@
+@if (IsVisible && (HasErrors || !string.IsNullOrEmpty(Message)))
+{
+    <div class="@AlertClass" role="alert">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 @IconClass" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3 flex-1">
+                @if (!string.IsNullOrEmpty(Title))
+                {
+                    <h3 class="@TitleClass">@Title</h3>
+                }
+                
+                @if (!string.IsNullOrEmpty(Message))
+                {
+                    <p class="@MessageClass">@Message</p>
+                }
+                
+                @if (HasErrors)
+                {
+                    <ul class="@ErrorListClass">
+                        @foreach (var error in Errors)
+                        {
+                            <li>• @error</li>
+                        }
+                    </ul>
+                }
+            </div>
+            
+            @if (Dismissible)
+            {
+                <div class="ml-auto pl-3">
+                    <button @onclick="Dismiss" class="@DismissButtonClass">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = true;
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public List<string> Errors { get; set; } = new();
+    [Parameter] public bool Dismissible { get; set; } = true;
+    [Parameter] public AlertType Type { get; set; } = AlertType.Error;
+    [Parameter] public EventCallback OnDismiss { get; set; }
+
+    private bool HasErrors => Errors?.Any() == true;
+
+    private string AlertClass => Type switch
+    {
+        AlertType.Error => "bg-red-50 border border-red-200 rounded-md p-4 mb-4",
+        AlertType.Warning => "bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4",
+        AlertType.Info => "bg-blue-50 border border-blue-200 rounded-md p-4 mb-4",
+        AlertType.Success => "bg-green-50 border border-green-200 rounded-md p-4 mb-4",
+        _ => "bg-red-50 border border-red-200 rounded-md p-4 mb-4"
+    };
+
+    private string IconClass => Type switch
+    {
+        AlertType.Error => "text-red-400",
+        AlertType.Warning => "text-yellow-400", 
+        AlertType.Info => "text-blue-400",
+        AlertType.Success => "text-green-400",
+        _ => "text-red-400"
+    };
+
+    private string TitleClass => Type switch
+    {
+        AlertType.Error => "text-sm font-medium text-red-800",
+        AlertType.Warning => "text-sm font-medium text-yellow-800",
+        AlertType.Info => "text-sm font-medium text-blue-800", 
+        AlertType.Success => "text-sm font-medium text-green-800",
+        _ => "text-sm font-medium text-red-800"
+    };
+
+    private string MessageClass => Type switch
+    {
+        AlertType.Error => "mt-2 text-sm text-red-700",
+        AlertType.Warning => "mt-2 text-sm text-yellow-700",
+        AlertType.Info => "mt-2 text-sm text-blue-700",
+        AlertType.Success => "mt-2 text-sm text-green-700", 
+        _ => "mt-2 text-sm text-red-700"
+    };
+
+    private string ErrorListClass => Type switch
+    {
+        AlertType.Error => "mt-2 text-sm text-red-600 list-none",
+        AlertType.Warning => "mt-2 text-sm text-yellow-600 list-none",
+        AlertType.Info => "mt-2 text-sm text-blue-600 list-none",
+        AlertType.Success => "mt-2 text-sm text-green-600 list-none",
+        _ => "mt-2 text-sm text-red-600 list-none"
+    };
+
+    private string DismissButtonClass => Type switch
+    {
+        AlertType.Error => "text-red-400 hover:text-red-600 transition-colors",
+        AlertType.Warning => "text-yellow-400 hover:text-yellow-600 transition-colors",
+        AlertType.Info => "text-blue-400 hover:text-blue-600 transition-colors", 
+        AlertType.Success => "text-green-400 hover:text-green-600 transition-colors",
+        _ => "text-red-400 hover:text-red-600 transition-colors"
+    };
+
+    private async Task Dismiss()
+    {
+        IsVisible = false;
+        await OnDismiss.InvokeAsync();
+    }
+
+    public enum AlertType { Error, Warning, Info, Success }
+}

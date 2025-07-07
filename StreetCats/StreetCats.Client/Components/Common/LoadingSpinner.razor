@@ -1,0 +1,57 @@
+@if (IsVisible)
+{
+    <div class="@ContainerClass">
+        <div class="flex items-center justify-center @ContentClass">
+            <!-- Spinner animato -->
+            <div class="animate-spin rounded-full @SpinnerSize border-b-2 @SpinnerColor"></div>
+            
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <span class="ml-3 @TextClass">@Message</span>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = true;
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public LoadingSize Size { get; set; } = LoadingSize.Medium;
+    [Parameter] public LoadingStyle Style { get; set; } = LoadingStyle.Orange;
+    [Parameter] public bool Overlay { get; set; } = false;
+
+    private string ContainerClass => Overlay 
+        ? "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        : "flex items-center justify-center py-4";
+
+    private string ContentClass => Overlay 
+        ? "bg-white rounded-lg p-6"
+        : "";
+
+    private string SpinnerSize => Size switch
+    {
+        LoadingSize.Small => "h-4 w-4",
+        LoadingSize.Medium => "h-8 w-8", 
+        LoadingSize.Large => "h-12 w-12",
+        _ => "h-8 w-8"
+    };
+
+    private string SpinnerColor => Style switch
+    {
+        LoadingStyle.Orange => "border-streetcats-orange",
+        LoadingStyle.Green => "border-streetcats-green",
+        LoadingStyle.Gray => "border-gray-400",
+        _ => "border-streetcats-orange"
+    };
+
+    private string TextClass => Style switch
+    {
+        LoadingStyle.Orange => "text-streetcats-orange font-medium",
+        LoadingStyle.Green => "text-streetcats-green font-medium",
+        LoadingStyle.Gray => "text-gray-600",
+        _ => "text-streetcats-orange font-medium"
+    };
+
+    public enum LoadingSize { Small, Medium, Large }
+    public enum LoadingStyle { Orange, Green, Gray }
+}
