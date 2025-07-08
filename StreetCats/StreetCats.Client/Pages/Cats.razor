@@ -1,0 +1,480 @@
+@page "/cats"
+@inject ICatService CatService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@using StreetCats.Client.Components.Common
+
+<PageTitle>🐱 Tutti i Gatti - STREETCATS</PageTitle>
+
+<!-- Header -->
+<div class="bg-gradient-to-r from-streetcats-orange to-streetcats-green text-white py-8">
+    <div class="container mx-auto">
+        <div class="flex flex-col sm:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold mb-2">🐱 Tutti i Gatti</h1>
+                <p class="text-lg opacity-90">@totalCats gatti segnalati dalla comunità</p>
+            </div>
+            @if (AuthService.IsAuthenticated)
+            {
+                <button @onclick="() => Navigation.NavigateTo('/add-cat')" 
+                        class="bg-white text-streetcats-orange font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors shadow-lg">
+                    ➕ Segnala Gatto
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="container mx-auto py-8 px-4">
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+            <h2 class="text-xl font-bold text-gray-800">🔍 Filtra e Cerca</h2>
+            <div class="flex items-center space-x-2 text-sm text-gray-600">
+                <span>Visualizzando:</span>
+                <span class="font-semibold text-streetcats-orange">@filteredCats.Count</span>
+                <span>di</span>
+                <span class="font-semibold">@totalCats</span>
+                <span>gatti</span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Search by Name -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <input @bind="searchName" @oninput="ApplyFilters" 
+                       placeholder="Cerca per nome..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-streetcats-orange focus:border-transparent" />
+            </div>
+            
+            <!-- Filter by Status -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Stato</label>
+                <select @bind="filterStatus" @onchange="ApplyFilters" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-streetcats-orange focus:border-transparent">
+                    <option value="">Tutti</option>
+                    <option value="Avvistato">🔍 Avvistato</option>
+                    <option value="InCura">🏥 In Cura</option>
+                    <option value="Adottato">🏠 Adottato</option>
+                    <option value="Disperso">❓ Disperso</option>
+                </select>
+            </div>
+            
+            <!-- Filter by Color -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Colore</label>
+                <select @bind="filterColor" @onchange="ApplyFilters" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-streetcats-orange focus:border-transparent">
+                    <option value="">Tutti</option>
+                    <option value="Arancione">🧡 Arancione</option>
+                    <option value="Grigio">🤍 Grigio</option>
+                    <option value="Nero">🖤 Nero</option>
+                    <option value="Bianco">🤍 Bianco</option>
+                    <option value="Tigrato">🐅 Tigrato</option>
+                    <option value="Maculato">🔴 Maculato</option>
+                    <option value="Tricolore">🔵 Tricolore</option>
+                </select>
+            </div>
+            
+            <!-- Sort By -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Ordina per</label>
+                <select @bind="sortBy" @onchange="ApplyFilters" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-streetcats-orange focus:border-transparent">
+                    <option value="newest">🕒 Più recenti</option>
+                    <option value="oldest">📅 Più vecchi</option>
+                    <option value="name">🏷️ Nome A-Z</option>
+                    <option value="lastSeen">👀 Ultimo avvistamento</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Quick Filter Buttons -->
+        <div class="flex flex-wrap gap-2 mt-4">
+            <button @onclick="() => ClearFilters()" 
+                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm transition-colors">
+                🔄 Resetta filtri
+            </button>
+            <button @onclick="() => SetQuickFilter('today')" 
+                    class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-full text-sm transition-colors">
+                📅 Avvistati oggi
+            </button>
+            <button @onclick="() => SetQuickFilter('week')" 
+                    class="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-full text-sm transition-colors">
+                📆 Questa settimana
+            </button>
+            <button @onclick="() => SetQuickFilter('needHelp')" 
+                    class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-3 py-1 rounded-full text-sm transition-colors">
+                🆘 Hanno bisogno di aiuto
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading)
+    {
+        <div class="text-center py-16">
+            <LoadingSpinner IsVisible="true" Message="Caricamento gatti..." Size="LoadingSpinner.LoadingSize.Large" />
+        </div>
+    }
+    <!-- Empty State -->
+    else if (!filteredCats.Any())
+    {
+        <div class="text-center py-16">
+            <div class="text-6xl mb-4">😿</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Nessun gatto trovato</h3>
+            @if (!string.IsNullOrEmpty(searchName) || !string.IsNullOrEmpty(filterStatus) || !string.IsNullOrEmpty(filterColor))
+            {
+                <p class="text-gray-600 mb-6">Prova a modificare i filtri di ricerca</p>
+                <button @onclick="ClearFilters" 
+                        class="bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg">
+                    🔄 Resetta Filtri
+                </button>
+            }
+            else
+            {
+                <p class="text-gray-600 mb-6">Non ci sono ancora gatti segnalati. Sii il primo!</p>
+                @if (AuthService.IsAuthenticated)
+                {
+                    <button @onclick="() => Navigation.NavigateTo('/add-cat')" 
+                            class="bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg">
+                        ➕ Segnala il Primo Gatto
+                    </button>
+                }
+                else
+                {
+                    <button @onclick="() => Navigation.NavigateTo('/login')" 
+                            class="bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg">
+                        🔑 Accedi per Segnalare
+                    </button>
+                }
+            }
+        </div>
+    }
+    <!-- Cats Grid -->
+    else
+    {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            @foreach (var cat in filteredCats)
+            {
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer transform hover:scale-105 duration-200"
+                     @onclick="() => Navigation.NavigateTo($'/cat/{cat.Id}')">
+                    
+                    <!-- Cat Photo -->
+                    <div class="relative">
+                        @if (!string.IsNullOrEmpty(cat.PhotoUrl))
+                        {
+                            <img src="@cat.PhotoUrl" alt="Foto di @cat.Name" 
+                                 class="w-full h-48 object-cover" />
+                        }
+                        else
+                        {
+                            <div class="w-full h-48 bg-gradient-to-br from-orange-200 to-green-200 flex items-center justify-center">
+                                <span class="text-6xl">🐱</span>
+                            </div>
+                        }
+                        
+                        <!-- Status Badge -->
+                        <div class="absolute top-2 right-2">
+                            <span class="@GetStatusBadgeClass(cat.Status) px-2 py-1 rounded-full text-xs font-medium">
+                                @GetStatusIcon(cat.Status) @cat.Status
+                            </span>
+                        </div>
+                        
+                        <!-- Quick Action Button -->
+                        @if (AuthService.IsAuthenticated && cat.CreatedBy == AuthService.CurrentUser?.Id.ToString())
+                        {
+                            <div class="absolute top-2 left-2">
+                                <span class="bg-streetcats-orange text-white px-2 py-1 rounded-full text-xs font-medium">
+                                    ✏️ Tuo
+                                </span>
+                            </div>
+                        }
+                    </div>
+                    
+                    <!-- Cat Info -->
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold text-gray-800 truncate">@cat.Name</h3>
+                            <span class="text-sm text-gray-500 ml-2">💬 @cat.Comments.Count</span>
+                        </div>
+                        
+                        <p class="text-sm text-gray-600 mb-2">
+                            <span class="inline-block w-3 h-3 rounded-full mr-1" style="background-color: @GetColorHex(cat.Color)"></span>
+                            @cat.Color
+                        </p>
+                        
+                        @if (!string.IsNullOrEmpty(cat.Description))
+                        {
+                            <p class="text-sm text-gray-600 mb-3 line-clamp-2">
+                                @(cat.Description.Length > 80 ? cat.Description.Substring(0, 80) + "..." : cat.Description)
+                            </p>
+                        }
+                        
+                        <!-- Location and Date -->
+                        <div class="space-y-1">
+                            @if (!string.IsNullOrEmpty(cat.Location.Address))
+                            {
+                                <p class="text-xs text-gray-500 flex items-center">
+                                    <span class="mr-1">📍</span>
+                                    @GetShortAddress(cat.Location.Address)
+                                </p>
+                            }
+                            <p class="text-xs text-gray-500 flex items-center">
+                                <span class="mr-1">👀</span>
+                                Visto @GetTimeAgo(cat.LastSeen)
+                            </p>
+                            <p class="text-xs text-gray-500 flex items-center">
+                                <span class="mr-1">👤</span>
+                                @cat.CreatedByName
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <!-- Load More Button (se necessario) -->
+        @if (totalCats > filteredCats.Count)
+        {
+            <div class="text-center mt-12">
+                <button @onclick="LoadMoreCats" 
+                        disabled="@isLoadingMore"
+                        class="bg-streetcats-orange hover:bg-orange-600 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-lg transition-colors">
+                    @if (isLoadingMore)
+                    {
+                        <span>🔄 Caricamento...</span>
+                    }
+                    else
+                    {
+                        <span>📋 Carica Altri Gatti</span>
+                    }
+                </button>
+            </div>
+        }
+    }
+
+    <!-- Quick Stats -->
+    <div class="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow-lg p-4 text-center">
+            <div class="text-2xl font-bold text-streetcats-orange">@totalCats</div>
+            <div class="text-sm text-gray-600">Gatti Totali</div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-4 text-center">
+            <div class="text-2xl font-bold text-green-600">@GetStatusCount(CatStatus.Adottato)</div>
+            <div class="text-sm text-gray-600">Adottati</div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-4 text-center">
+            <div class="text-2xl font-bold text-blue-600">@GetStatusCount(CatStatus.InCura)</div>
+            <div class="text-sm text-gray-600">In Cura</div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-4 text-center">
+            <div class="text-2xl font-bold text-orange-600">@GetStatusCount(CatStatus.Avvistato)</div>
+            <div class="text-sm text-gray-600">Da Aiutare</div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Messages -->
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="fixed bottom-4 left-4 right-4 z-50">
+        <ErrorAlert IsVisible="true" 
+                  Message="@errorMessage" 
+                  Type="ErrorAlert.AlertType.Error"
+                  OnDismiss="@(() => errorMessage = string.Empty)" />
+    </div>
+}
+
+@code {
+    private List<Cat> allCats = new();
+    private List<Cat> filteredCats = new();
+    private bool isLoading = true;
+    private bool isLoadingMore = false;
+    private string errorMessage = "";
+    private int totalCats = 0;
+
+    // Filters
+    private string searchName = "";
+    private string filterStatus = "";
+    private string filterColor = "";
+    private string sortBy = "newest";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCats();
+    }
+
+    private async Task LoadCats()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var response = await CatService.GetAllCatsAsync();
+
+            if (response.Success && response.Data != null)
+            {
+                allCats = response.Data;
+                totalCats = allCats.Count;
+                ApplyFilters();
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Errore caricamento gatti";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Errore: {ex.Message}";
+            Console.WriteLine($"Errore load cats: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allCats.AsEnumerable();
+
+        // Filtro per nome
+        if (!string.IsNullOrWhiteSpace(searchName))
+        {
+            query = query.Where(c => c.Name.Contains(searchName, StringComparison.OrdinalIgnoreCase) ||
+                                   c.Description.Contains(searchName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Filtro per stato
+        if (!string.IsNullOrEmpty(filterStatus) && Enum.TryParse<CatStatus>(filterStatus, out var status))
+        {
+            query = query.Where(c => c.Status == status);
+        }
+
+        // Filtro per colore
+        if (!string.IsNullOrEmpty(filterColor))
+        {
+            query = query.Where(c => c.Color.Contains(filterColor, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Ordinamento
+        query = sortBy switch
+        {
+            "oldest" => query.OrderBy(c => c.CreatedAt),
+            "name" => query.OrderBy(c => c.Name),
+            "lastSeen" => query.OrderByDescending(c => c.LastSeen),
+            _ => query.OrderByDescending(c => c.CreatedAt) // newest (default)
+        };
+
+        filteredCats = query.ToList();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        searchName = "";
+        filterStatus = "";
+        filterColor = "";
+        sortBy = "newest";
+        ApplyFilters();
+    }
+
+    private void SetQuickFilter(string filter)
+    {
+        ClearFilters();
+        
+        switch (filter)
+        {
+            case "today":
+                filteredCats = allCats.Where(c => c.LastSeen.Date == DateTime.Today).ToList();
+                break;
+            case "week":
+                var weekAgo = DateTime.Today.AddDays(-7);
+                filteredCats = allCats.Where(c => c.LastSeen.Date >= weekAgo).ToList();
+                break;
+            case "needHelp":
+                filteredCats = allCats.Where(c => c.Status == CatStatus.Avvistato || c.Status == CatStatus.Disperso).ToList();
+                break;
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task LoadMoreCats()
+    {
+        // TODO: Implementare paginazione se necessario
+        isLoadingMore = true;
+        await Task.Delay(1000); // Simula caricamento
+        isLoadingMore = false;
+    }
+
+    private int GetStatusCount(CatStatus status)
+    {
+        return allCats.Count(c => c.Status == status);
+    }
+
+    private string GetStatusIcon(CatStatus status)
+    {
+        return status switch
+        {
+            CatStatus.Avvistato => "🔍",
+            CatStatus.InCura => "🏥",
+            CatStatus.Adottato => "🏠",
+            CatStatus.Disperso => "❓",
+            _ => "🐱"
+        };
+    }
+
+    private string GetStatusBadgeClass(CatStatus status)
+    {
+        return status switch
+        {
+            CatStatus.Avvistato => "bg-orange-100 text-orange-800",
+            CatStatus.InCura => "bg-blue-100 text-blue-800",
+            CatStatus.Adottato => "bg-green-100 text-green-800",
+            CatStatus.Disperso => "bg-red-100 text-red-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+
+    private string GetColorHex(string color)
+    {
+        return color.ToLower() switch
+        {
+            "arancione" => "#f97316",
+            "grigio" => "#6b7280",
+            "nero" => "#111827",
+            "bianco" => "#f9fafb",
+            "tigrato" => "#92400e",
+            "maculato" => "#dc2626",
+            "tricolore" => "#059669",
+            _ => "#9ca3af"
+        };
+    }
+
+    private string GetShortAddress(string fullAddress)
+    {
+        if (string.IsNullOrEmpty(fullAddress)) return "Posizione non specificata";
+        
+        var parts = fullAddress.Split(',');
+        return parts.Length > 0 ? parts[0].Trim() : fullAddress;
+    }
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        
+        if (span.TotalDays > 1)
+            return $"{(int)span.TotalDays} giorni fa";
+        else if (span.TotalHours > 1)
+            return $"{(int)span.TotalHours} ore fa";
+        else if (span.TotalMinutes > 1)
+            return $"{(int)span.TotalMinutes} minuti fa";
+        else
+            return "Ora";
+    }
+}

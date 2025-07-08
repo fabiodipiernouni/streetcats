@@ -1,0 +1,570 @@
+@page "/add-cat"
+@inject ICatService CatService
+@inject IAuthService AuthService
+@inject IMapService MapService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@using StreetCats.Client.Components.Common
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize]
+
+<PageTitle>➕ Segnala Gatto - STREETCATS</PageTitle>
+
+<!-- Header -->
+<div class="bg-gradient-to-r from-streetcats-orange to-streetcats-green text-white py-8">
+    <div class="container mx-auto text-center">
+        <div class="text-4xl mb-4">🐱➕</div>
+        <h1 class="text-3xl font-bold mb-2">Segnala un Nuovo Gatto</h1>
+        <p class="text-lg opacity-90">Aiuta un gatto randagio della tua zona</p>
+    </div>
+</div>
+
+<div class="container mx-auto py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Progress Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-center space-x-4 text-sm">
+                <div class="flex items-center">
+                    <span class="@(currentStep >= 1 ? "bg-streetcats-orange text-white" : "bg-gray-200 text-gray-600") rounded-full w-8 h-8 flex items-center justify-center font-bold mr-2">1</span>
+                    <span class="@(currentStep >= 1 ? "text-streetcats-orange font-medium" : "text-gray-500")">Dettagli Gatto</span>
+                </div>
+                <div class="w-12 h-0.5 @(currentStep >= 2 ? "bg-streetcats-orange" : "bg-gray-200")"></div>
+                <div class="flex items-center">
+                    <span class="@(currentStep >= 2 ? "bg-streetcats-orange text-white" : "bg-gray-200 text-gray-600") rounded-full w-8 h-8 flex items-center justify-center font-bold mr-2">2</span>
+                    <span class="@(currentStep >= 2 ? "text-streetcats-orange font-medium" : "text-gray-500")">Posizione</span>
+                </div>
+                <div class="w-12 h-0.5 @(currentStep >= 3 ? "bg-streetcats-orange" : "bg-gray-200")"></div>
+                <div class="flex items-center">
+                    <span class="@(currentStep >= 3 ? "bg-streetcats-orange text-white" : "bg-gray-200 text-gray-600") rounded-full w-8 h-8 flex items-center justify-center font-bold mr-2">3</span>
+                    <span class="@(currentStep >= 3 ? "text-streetcats-orange font-medium" : "text-gray-500")">Conferma</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            <EditForm Model="@catModel" OnValidSubmit="@HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <!-- Error/Success Messages -->
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <ErrorAlert IsVisible="true" 
+                              Message="@errorMessage" 
+                              Type="ErrorAlert.AlertType.Error"
+                              OnDismiss="@(() => errorMessage = string.Empty)" />
+                }
+
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <ErrorAlert IsVisible="true" 
+                              Message="@successMessage" 
+                              Type="ErrorAlert.AlertType.Success"
+                              OnDismiss="@(() => successMessage = string.Empty)" />
+                }
+
+                <!-- Step 1: Dettagli Gatto -->
+                @if (currentStep == 1)
+                {
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">📝 Informazioni sul Gatto</h2>
+
+                        <!-- Nome -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                🏷️ Nome o Soprannome *
+                            </label>
+                            <InputText @bind-Value="catModel.Name" 
+                                     placeholder="Es. Micio, Pallina, Gatto Rosso..."
+                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-streetcats-orange focus:border-transparent" />
+                            <ValidationMessage For="() => catModel.Name" class="text-red-500 text-sm mt-1" />
+                        </div>
+
+                        <!-- Colore -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                🎨 Colore del Pelo *
+                            </label>
+                            <InputSelect @bind-Value="catModel.Color" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-streetcats-orange focus:border-transparent">
+                                <option value="">Seleziona colore...</option>
+                                <option value="Arancione">🧡 Arancione</option>
+                                <option value="Grigio">🤍 Grigio</option>
+                                <option value="Nero">🖤 Nero</option>
+                                <option value="Bianco">🤍 Bianco</option>
+                                <option value="Tigrato">🐅 Tigrato</option>
+                                <option value="Maculato">🔴 Maculato</option>
+                                <option value="Tricolore">🔵 Tricolore</option>
+                                <option value="Altro">❓ Altro</option>
+                            </InputSelect>
+                            <ValidationMessage For="() => catModel.Color" class="text-red-500 text-sm mt-1" />
+                        </div>
+
+                        <!-- Stato -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                📊 Stato del Gatto *
+                            </label>
+                            <InputSelect @bind-Value="statusString" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-streetcats-orange focus:border-transparent">
+                                <option value="">Seleziona stato...</option>
+                                <option value="Avvistato">🔍 Avvistato (randagio)</option>
+                                <option value="InCura">🏥 In cura (dal veterinario)</option>
+                                <option value="Adottato">🏠 Adottato</option>
+                                <option value="Disperso">❓ Disperso (cerca casa)</option>
+                            </InputSelect>
+                            <ValidationMessage For="() => statusString" class="text-red-500 text-sm mt-1" />
+                        </div>
+
+                        <!-- Descrizione -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                📖 Descrizione
+                            </label>
+                            <InputTextArea @bind-Value="catModel.Description" 
+                                         rows="4"
+                                         placeholder="Descrivi il gatto: comportamento, condizioni di salute, dove l'hai visto..."
+                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-streetcats-orange focus:border-transparent" />
+                            <p class="text-sm text-gray-500 mt-1">Facoltativo ma consigliato per aiutare la comunità</p>
+                        </div>
+
+                        <!-- Photo Upload Placeholder -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                📸 Foto del Gatto
+                            </label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-streetcats-orange transition-colors cursor-pointer">
+                                <div class="text-4xl mb-2">📷</div>
+                                <p class="text-gray-600">Clicca per aggiungere una foto</p>
+                                <p class="text-sm text-gray-500 mt-1">(Funzionalità disponibile presto)</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Step 2: Posizione -->
+                @if (currentStep == 2)
+                {
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">📍 Dove hai visto il gatto?</h2>
+
+                        <!-- Map Container -->
+                        <div class="bg-gray-100 rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <p class="text-sm text-gray-600">Clicca sulla mappa per selezionare la posizione</p>
+                                <button type="button" @onclick="GetCurrentLocation" 
+                                        disabled="@isLoadingLocation"
+                                        class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm">
+                                    @if (isLoadingLocation)
+                                    {
+                                        <span>📍 Rilevamento...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>📍 Usa la mia posizione</span>
+                                    }
+                                </button>
+                            </div>
+                            
+                            <div id="add-cat-map" class="w-full h-64 rounded-lg border-2 border-gray-200"></div>
+                        </div>
+
+                        <!-- Coordinate Display -->
+                        @if (catModel.Location.Latitude != 0 && catModel.Location.Longitude != 0)
+                        {
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-green-600">✅</span>
+                                    <span class="text-sm font-medium text-green-800">Posizione selezionata:</span>
+                                </div>
+                                <p class="text-sm text-green-700 mt-1">
+                                    Lat: @catModel.Location.Latitude.ToString("F6"), 
+                                    Lng: @catModel.Location.Longitude.ToString("F6")
+                                </p>
+                                @if (!string.IsNullOrEmpty(detectedAddress))
+                                {
+                                    <p class="text-sm text-green-600 mt-1">📍 @detectedAddress</p>
+                                }
+                            </div>
+                        }
+
+                        <!-- Manual Address Input -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                🏠 Indirizzo (opzionale)
+                            </label>
+                            <InputText @bind-Value="catModel.Location.Address" 
+                                     placeholder="Es. Via Roma 123, Napoli"
+                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-streetcats-orange focus:border-transparent" />
+                            <p class="text-sm text-gray-500 mt-1">Se non usi la mappa, inserisci l'indirizzo manualmente</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Step 3: Conferma -->
+                @if (currentStep == 3)
+                {
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">✅ Conferma Segnalazione</h2>
+
+                        <!-- Riepilogo -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 Riepilogo</h3>
+                            
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Nome:</p>
+                                    <p class="font-medium text-gray-800">@catModel.Name</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Colore:</p>
+                                    <p class="font-medium text-gray-800">@catModel.Color</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Stato:</p>
+                                    <p class="font-medium text-gray-800">@GetStatusIcon() @statusString</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Posizione:</p>
+                                    <p class="font-medium text-gray-800">
+                                        @if (catModel.Location.Latitude != 0)
+                                        {
+                                            <span>📍 Selezionata sulla mappa</span>
+                                        }
+                                        else if (!string.IsNullOrEmpty(catModel.Location.Address))
+                                        {
+                                            <span>📍 @catModel.Location.Address</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-red-500">❌ Non specificata</span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(catModel.Description))
+                            {
+                                <div class="mt-4">
+                                    <p class="text-sm text-gray-600 mb-1">Descrizione:</p>
+                                    <p class="text-gray-800">@catModel.Description</p>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Consenso Privacy -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <input type="checkbox" @bind="privacyAccepted" id="privacy" 
+                                       class="mt-1 h-4 w-4 text-streetcats-orange focus:ring-streetcats-orange border-gray-300 rounded" />
+                                <label for="privacy" class="text-sm text-blue-800">
+                                    Accetto che le informazioni inserite vengano condivise pubblicamente sulla piattaforma STREETCATS 
+                                    per aiutare la comunità a prendersi cura dei gatti randagi. 
+                                    <strong>Non verranno raccolti dati personali sensibili.</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+                    <!-- Back Button -->
+                    @if (currentStep > 1)
+                    {
+                        <button type="button" @onclick="PreviousStep" 
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg transition-colors">
+                            ← Indietro
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" @onclick="() => Navigation.NavigateTo('/')" 
+                                class="text-gray-500 hover:text-gray-700 font-medium py-3 px-6">
+                            ← Annulla
+                        </button>
+                    }
+
+                    <!-- Next/Submit Button -->
+                    @if (currentStep < 3)
+                    {
+                        <button type="button" @onclick="NextStep" 
+                                disabled="@(!CanProceedToNextStep())"
+                                class="bg-streetcats-orange hover:bg-orange-600 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                            Avanti →
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="submit" 
+                                disabled="@(!CanSubmit() || isSubmitting)"
+                                class="bg-streetcats-green hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center">
+                            @if (isSubmitting)
+                            {
+                                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                <span>Segnalazione...</span>
+                            }
+                            else
+                            {
+                                <span>🐱 Segnala Gatto</span>
+                            }
+                        </button>
+                    }
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CatModel catModel = new();
+    private string statusString = "";
+    private int currentStep = 1;
+    private bool isSubmitting = false;
+    private bool isLoadingLocation = false;
+    private bool privacyAccepted = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+    private string detectedAddress = "";
+
+    private const string MAP_ID = "add-cat-map";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Verifica autenticazione
+        if (!AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Inizializza coordinate default (centro Napoli)
+        catModel.Location.Latitude = 40.8518;
+        catModel.Location.Longitude = 14.2681;
+        catModel.Location.City = "Napoli";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && currentStep == 2)
+        {
+            await InitializeMap();
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.initializeMap", 
+                MAP_ID, catModel.Location.Latitude, catModel.Location.Longitude, 14);
+                
+            // Configura callback per click sulla mappa
+            var dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.onMapClick", MAP_ID, dotNetRef, "OnMapClicked");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore inizializzazione mappa: {ex}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnMapClicked(dynamic locationData)
+    {
+        try
+        {
+            catModel.Location.Latitude = (double)locationData.latitude;
+            catModel.Location.Longitude = (double)locationData.longitude;
+            
+            // Prova a ottenere l'indirizzo
+            try
+            {
+                detectedAddress = await MapService.GetAddressFromCoordinatesAsync(
+                    catModel.Location.Latitude, catModel.Location.Longitude);
+                    
+                if (!string.IsNullOrEmpty(detectedAddress))
+                {
+                    catModel.Location.Address = detectedAddress;
+                }
+            }
+            catch
+            {
+                detectedAddress = "Indirizzo non disponibile";
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore click mappa: {ex}");
+        }
+    }
+
+    private async Task GetCurrentLocation()
+    {
+        try
+        {
+            isLoadingLocation = true;
+            StateHasChanged();
+
+            var location = await JSRuntime.InvokeAsync<dynamic>("StreetCatsInterop.getCurrentLocation");
+            
+            if (location != null)
+            {
+                catModel.Location.Latitude = (double)location.latitude;
+                catModel.Location.Longitude = (double)location.longitude;
+                
+                // Centra mappa sulla posizione
+                await JSRuntime.InvokeVoidAsync("StreetCatsInterop.setMapView", 
+                    MAP_ID, catModel.Location.Latitude, catModel.Location.Longitude, 16);
+                
+                // Ottieni indirizzo
+                detectedAddress = await MapService.GetAddressFromCoordinatesAsync(
+                    catModel.Location.Latitude, catModel.Location.Longitude);
+                
+                if (!string.IsNullOrEmpty(detectedAddress))
+                {
+                    catModel.Location.Address = detectedAddress;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Impossibile ottenere la posizione. Verifica i permessi del browser.";
+            Console.WriteLine($"Errore geolocation: {ex}");
+        }
+        finally
+        {
+            isLoadingLocation = false;
+            StateHasChanged();
+        }
+    }
+
+    private void NextStep()
+    {
+        if (CanProceedToNextStep())
+        {
+            currentStep++;
+            
+            // Se arriviamo al step mappa, inizializza
+            if (currentStep == 2)
+            {
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(100); // Piccolo delay per il rendering
+                    await InvokeAsync(InitializeMap);
+                });
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousStep()
+    {
+        if (currentStep > 1)
+        {
+            currentStep--;
+            StateHasChanged();
+        }
+    }
+
+    private bool CanProceedToNextStep()
+    {
+        return currentStep switch
+        {
+            1 => !string.IsNullOrWhiteSpace(catModel.Name) && 
+                 !string.IsNullOrWhiteSpace(catModel.Color) && 
+                 !string.IsNullOrWhiteSpace(statusString),
+            2 => (catModel.Location.Latitude != 0 && catModel.Location.Longitude != 0) || 
+                 !string.IsNullOrWhiteSpace(catModel.Location.Address),
+            _ => false
+        };
+    }
+
+    private bool CanSubmit()
+    {
+        return CanProceedToNextStep() && privacyAccepted && !isSubmitting;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (!CanSubmit()) return;
+
+        try
+        {
+            isSubmitting = true;
+            errorMessage = "";
+            StateHasChanged();
+
+            // Converte status string a enum
+            if (Enum.TryParse<CatStatus>(statusString, out var status))
+            {
+                catModel.Status = status;
+            }
+
+            // Crea oggetto Cat
+            var cat = new Cat
+            {
+                Name = catModel.Name,
+                Description = catModel.Description,
+                Color = catModel.Color,
+                Status = catModel.Status,
+                Location = catModel.Location,
+                PhotoUrl = "", // TODO: Implementare upload foto
+            };
+
+            var response = await CatService.CreateCatAsync(cat);
+
+            if (response.Success && response.Data != null)
+            {
+                successMessage = "🎉 Gatto segnalato con successo! Reindirizzamento in corso...";
+                StateHasChanged();
+                
+                await Task.Delay(2000);
+                Navigation.NavigateTo($"/cat/{response.Data.Id}");
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Errore durante la segnalazione";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Errore: {ex.Message}";
+            Console.WriteLine($"Errore submit: {ex}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetStatusIcon()
+    {
+        return statusString switch
+        {
+            "Avvistato" => "🔍",
+            "InCura" => "🏥",
+            "Adottato" => "🏠",
+            "Disperso" => "❓",
+            _ => "🐱"
+        };
+    }
+
+    // Model per il form
+    public class CatModel
+    {
+        [Required(ErrorMessage = "Il nome è obbligatorio")]
+        [StringLength(50, MinimumLength = 2, ErrorMessage = "Il nome deve essere tra 2 e 50 caratteri")]
+        public string Name { get; set; } = "";
+
+        [Required(ErrorMessage = "Il colore è obbligatorio")]
+        public string Color { get; set; } = "";
+
+        public string Description { get; set; } = "";
+        public CatStatus Status { get; set; } = CatStatus.Avvistato;
+        public Location Location { get; set; } = new();
+    }
+}

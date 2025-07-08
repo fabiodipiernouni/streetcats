@@ -1,0 +1,246 @@
+@page "/register"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@using StreetCats.Client.Components.Common
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>📝 Registrazione - STREETCATS</PageTitle>
+
+<div class="min-h-screen bg-gradient-to-br from-green-400 to-orange-400 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <!-- Header -->
+        <div class="text-center">
+            <div class="text-6xl mb-4">🐱</div>
+            <h2 class="text-3xl font-bold text-white mb-2">
+                Unisciti a STREETCATS
+            </h2>
+            <p class="text-white opacity-90">
+                Inizia ad aiutare i gatti randagi oggi stesso
+            </p>
+        </div>
+
+        <!-- Register Form -->
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            <EditForm Model="@registerModel" OnValidSubmit="@HandleRegister">
+                <DataAnnotationsValidator />
+                
+                <!-- Error/Success Alert -->
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <ErrorAlert IsVisible="true" 
+                              Message="@errorMessage" 
+                              Type="ErrorAlert.AlertType.Error"
+                              OnDismiss="@(() => errorMessage = string.Empty)" />
+                }
+                
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <ErrorAlert IsVisible="true" 
+                              Message="@successMessage" 
+                              Type="ErrorAlert.AlertType.Success"
+                              OnDismiss="@(() => successMessage = string.Empty)" />
+                }
+
+                <div class="space-y-4">
+                    <!-- Nome Completo -->
+                    <div>
+                        <label for="fullname" class="block text-sm font-medium text-gray-700 mb-1">
+                            📛 Nome Completo
+                        </label>
+                        <InputText @bind-Value="registerModel.FullName" 
+                                 id="fullname"
+                                 placeholder="Es. Mario Rossi"
+                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-streetcats-orange focus:border-streetcats-orange" />
+                        <ValidationMessage For="() => registerModel.FullName" class="text-red-500 text-xs mt-1" />
+                    </div>
+
+                    <!-- Username -->
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                            👤 Nome Utente
+                        </label>
+                        <InputText @bind-Value="registerModel.Username" 
+                                 id="username"
+                                 placeholder="Es. mario_rossi"
+                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-streetcats-orange focus:border-streetcats-orange" />
+                        <ValidationMessage For="() => registerModel.Username" class="text-red-500 text-xs mt-1" />
+                        <p class="text-xs text-gray-500 mt-1">Minimo 3 caratteri, solo lettere e numeri</p>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                            📧 Email
+                        </label>
+                        <InputText @bind-Value="registerModel.Email" 
+                                 type="email"
+                                 id="email"
+                                 placeholder="mario@example.com"
+                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-streetcats-orange focus:border-streetcats-orange" />
+                        <ValidationMessage For="() => registerModel.Email" class="text-red-500 text-xs mt-1" />
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                            🔒 Password
+                        </label>
+                        <InputText @bind-Value="registerModel.Password" 
+                                 type="password"
+                                 id="password"
+                                 placeholder="Minimo 6 caratteri"
+                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-streetcats-orange focus:border-streetcats-orange" />
+                        <ValidationMessage For="() => registerModel.Password" class="text-red-500 text-xs mt-1" />
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div>
+                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">
+                            🔒 Conferma Password
+                        </label>
+                        <InputText @bind-Value="registerModel.ConfirmPassword" 
+                                 type="password"
+                                 id="confirmPassword"
+                                 placeholder="Ripeti la password"
+                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-streetcats-orange focus:border-streetcats-orange" />
+                        <ValidationMessage For="() => registerModel.ConfirmPassword" class="text-red-500 text-xs mt-1" />
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit" 
+                              disabled="@isLoading"
+                              class="w-full bg-streetcats-green hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center">
+                            @if (isLoading)
+                            {
+                                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                <span>Registrazione in corso...</span>
+                            }
+                            else
+                            {
+                                <span>📝 Registrati</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+
+            <!-- Demo Info -->
+            <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h4 class="text-sm font-medium text-green-800 mb-2">🧪 Modalità Demo</h4>
+                <p class="text-xs text-green-600">
+                    La registrazione è simulata. Evita username come "admin", "test", "demo" che sono già "presi".
+                </p>
+            </div>
+
+            <!-- Links -->
+            <div class="mt-6 text-center space-y-2">
+                <p class="text-sm text-gray-600">
+                    Hai già un account?
+                    <button @onclick="() => Navigation.NavigateTo('/login')" 
+                            class="text-streetcats-green hover:text-green-600 font-medium">
+                        Accedi qui
+                    </button>
+                </p>
+                <p class="text-sm">
+                    <button @onclick="() => Navigation.NavigateTo('/')" 
+                            class="text-gray-500 hover:text-gray-700">
+                        ← Torna alla Home
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterRequestModel registerModel = new();
+    private bool isLoading = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Se già autenticato, reindirizza alla home
+        if (AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+            successMessage = "";
+            StateHasChanged();
+
+            // Crea request
+            var request = new RegisterRequest
+            {
+                Username = registerModel.Username,
+                Email = registerModel.Email,
+                FullName = registerModel.FullName,
+                Password = registerModel.Password,
+                ConfirmPassword = registerModel.ConfirmPassword
+            };
+
+            var response = await AuthService.RegisterAsync(request);
+
+            if (response.Success)
+            {
+                successMessage = "Registrazione completata! Reindirizzamento in corso...";
+                StateHasChanged();
+                
+                // Aspetta un momento per mostrare il messaggio, poi reindirizza
+                await Task.Delay(2000);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = response.Message;
+                if (response.Errors?.Any() == true)
+                {
+                    errorMessage += " " + string.Join(", ", response.Errors);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Errore durante la registrazione: " + ex.Message;
+            Console.WriteLine($"Errore registrazione: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // Model per la validazione form
+    private class RegisterRequestModel
+    {
+        [Required(ErrorMessage = "Il nome completo è obbligatorio")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Il nome deve essere tra 2 e 100 caratteri")]
+        public string FullName { get; set; } = "";
+
+        [Required(ErrorMessage = "Il nome utente è obbligatorio")]
+        [StringLength(30, MinimumLength = 3, ErrorMessage = "Il nome utente deve essere tra 3 e 30 caratteri")]
+        [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Solo lettere, numeri e underscore")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "L'email è obbligatoria")]
+        [EmailAddress(ErrorMessage = "Formato email non valido")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "La password è obbligatoria")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "La password deve essere di almeno 6 caratteri")]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "Conferma la password")]
+        [Compare(nameof(Password), ErrorMessage = "Le password non coincidono")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

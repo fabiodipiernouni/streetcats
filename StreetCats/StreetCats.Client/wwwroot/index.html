@@ -4,45 +4,65 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StreetCats</title>
+    <title>🐱 STREETCATS - Gatti Randagi Napoli</title>
+    <meta name="description" content="Piattaforma per l'avvistamento e la cura dei gatti randagi di Napoli" />
     <base href="/" />
-    <!-- Usa CSS generato invece di CDN -->
+
+    <!-- 🎨 CSS -->
     <link href="css/app.css" rel="stylesheet" />
-    <link rel="icon" type="image/png" href="favicon.png" />
     <link href="StreetCats.Client.styles.css" rel="stylesheet" />
 
-    <script>
-        // Configurazione Tailwind per STREETCATS
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'streetcats-orange': '#f97316',
-                        'streetcats-green': '#22c55e'
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- 🗺️ Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+
+    <!-- 📱 PWA Meta Tags -->
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <meta name="theme-color" content="#f97316" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="STREETCATS" />
 </head>
 
 <body>
+    <!-- 📱 App Container -->
     <div id="app">
-        <svg class="loading" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-            <path d="M12 20h.01"></path>
-        </svg>
-        <div class="loading-text">Caricamento STREETCATS...</div>
+        <!-- Loading Screen STREETCATS -->
+        <div class="fixed inset-0 bg-gradient-to-br from-orange-400 to-green-400 flex flex-col items-center justify-center text-white">
+            <div class="text-6xl mb-4 animate-bounce">🐱</div>
+            <h1 class="text-3xl font-bold mb-2">STREETCATS</h1>
+            <p class="text-lg opacity-80 mb-6">Caricamento in corso...</p>
+
+            <!-- Loading Spinner -->
+            <div class="flex space-x-2">
+                <div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 0ms;"></div>
+                <div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 150ms;"></div>
+                <div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 300ms;"></div>
+            </div>
+        </div>
     </div>
 
+    <!-- ⚠️ Error UI -->
     <div id="blazor-error-ui">
-        Si è verificato un errore.
-        <a href="" class="reload">Ricarica</a>
-        <a class="dismiss">🗙</a>
+        <div class="flex items-center justify-between">
+            <span>🚨 Si è verificato un errore imprevisto.</span>
+            <div class="flex space-x-2">
+                <a href="" class="text-blue-600 hover:underline">🔄 Ricarica</a>
+                <button class="dismiss text-gray-500 hover:text-red-600 ml-2">🗙</button>
+            </div>
+        </div>
     </div>
-    <script src="js/geolocation.js"></script>
+
+    <!-- 🗺️ Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <!-- 🔧 JavaScript Interop -->
+    <script src="js/streetcats-interop.js"></script>
+
+    <!-- ⚡ Blazor WebAssembly -->
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
 

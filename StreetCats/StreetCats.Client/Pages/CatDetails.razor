@@ -1,0 +1,567 @@
+@page "/cat/{catId:guid}"
+@inject ICatService CatService
+@inject IAuthService AuthService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@using StreetCats.Client.Components.Common
+
+<PageTitle>🐱 @(cat?.Name ?? "Caricamento...") - STREETCATS</PageTitle>
+
+@if (isLoading)
+{
+    <!-- Loading State -->
+    <div class="container mx-auto py-16 text-center">
+        <LoadingSpinner IsVisible="true" Message="Caricamento dettagli gatto..." Size="LoadingSpinner.LoadingSize.Large" />
+    </div>
+}
+else if (cat == null)
+{
+    <!-- Not Found State -->
+    <div class="container mx-auto py-16 text-center">
+        <div class="text-6xl mb-4">😿</div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Gatto non trovato</h1>
+        <p class="text-gray-600 mb-8">Il gatto che stai cercando non esiste o è stato rimosso.</p>
+        <button @onclick="() => Navigation.NavigateTo('/cats')" 
+                class="bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg">
+            📋 Vedi tutti i gatti
+        </button>
+    </div>
+}
+else
+{
+    <!-- Cat Details -->
+    <div class="bg-gradient-to-r from-streetcats-orange to-streetcats-green text-white py-8">
+        <div class="container mx-auto">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">🐱 @cat.Name</h1>
+                    <p class="text-lg opacity-90">@GetStatusIcon(cat.Status) @cat.Status - @cat.Color</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm opacity-75">Segnalato da</p>
+                    <p class="font-semibold">@cat.CreatedByName</p>
+                    <p class="text-sm opacity-75">@cat.CreatedAt.ToString("dd/MM/yyyy")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto py-8 px-4">
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Photo Section -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                    @if (!string.IsNullOrEmpty(cat.PhotoUrl))
+                    {
+                        <img src="@cat.PhotoUrl" alt="Foto di @cat.Name" 
+                             class="w-full h-64 object-cover" />
+                    }
+                    else
+                    {
+                        <div class="w-full h-64 bg-gray-100 flex items-center justify-center">
+                            <div class="text-center text-gray-500">
+                                <div class="text-6xl mb-2">📷</div>
+                                <p>Nessuna foto disponibile</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Description -->
+                @if (!string.IsNullOrEmpty(cat.Description))
+                {
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">📖 Descrizione</h2>
+                        <p class="text-gray-700 leading-relaxed">@cat.Description</p>
+                    </div>
+                }
+
+                <!-- Comments Section -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">💬 Commenti (@cat.Comments.Count)</h2>
+                        @if (AuthService.IsAuthenticated)
+                        {
+                            <button @onclick="() => showAddComment = !showAddComment" 
+                                    class="bg-streetcats-orange hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm">
+                                ➕ Aggiungi Commento
+                            </button>
+                        }
+                    </div>
+
+                    <!-- Add Comment Form -->
+                    @if (showAddComment && AuthService.IsAuthenticated)
+                    {
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                            <EditForm Model="@newComment" OnValidSubmit="@SubmitComment">
+                                <div class="space-y-4">
+                                    <InputTextArea @bind-Value="newComment.Text" 
+                                                 rows="3"
+                                                 placeholder="Scrivi un commento su questo gatto..."
+                                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-streetcats-orange focus:border-transparent" />
+                                    <div class="flex justify-end space-x-2">
+                                        <button type="button" @onclick="() => showAddComment = false" 
+                                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm">
+                                            Annulla
+                                        </button>
+                                        <button type="submit" 
+                                                disabled="@(string.IsNullOrWhiteSpace(newComment.Text) || isSubmittingComment)"
+                                                class="bg-streetcats-orange hover:bg-orange-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm">
+                                            @if (isSubmittingComment)
+                                            {
+                                                <span>💬 Invio...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>💬 Commenta</span>
+                                            }
+                                        </button>
+                                    </div>
+                                </div>
+                            </EditForm>
+                        </div>
+                    }
+                    else if (!AuthService.IsAuthenticated)
+                    {
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
+                            <p class="text-blue-800 mb-2">Accedi per aggiungere commenti</p>
+                            <button @onclick="() => Navigation.NavigateTo('/login')" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+                                🔑 Accedi
+                            </button>
+                        </div>
+                    }
+
+                    <!-- Comments List -->
+                    @if (cat.Comments.Any())
+                    {
+                        <div class="space-y-4">
+                            @foreach (var comment in cat.Comments.OrderByDescending(c => c.CreatedAt))
+                            {
+                                <div class="border-l-4 border-streetcats-orange pl-4 py-2 bg-gray-50 rounded-r-lg">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="font-semibold text-streetcats-orange">@comment.UserName</span>
+                                        <span class="text-sm text-gray-500">@GetTimeAgo(comment.CreatedAt)</span>
+                                    </div>
+                                    <p class="text-gray-700">@comment.Text</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-8 text-gray-500">
+                            <div class="text-4xl mb-2">💬</div>
+                            <p>Nessun commento ancora. Sii il primo a commentare!</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Quick Info Card -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">📊 Informazioni</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="text-sm text-gray-600">Stato:</span>
+                            <p class="font-medium">@GetStatusIcon(cat.Status) @cat.Status</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-600">Colore:</span>
+                            <p class="font-medium">@cat.Color</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-600">Ultimo avvistamento:</span>
+                            <p class="font-medium">@cat.LastSeen.ToString("dd/MM/yyyy")</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-600">Segnalato da:</span>
+                            <p class="font-medium">@cat.CreatedByName</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Card -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">📍 Posizione</h3>
+                    
+                    <!-- Map -->
+                    <div id="cat-detail-map" class="w-full h-48 rounded-lg border-2 border-gray-200 mb-4"></div>
+                    
+                    @if (!string.IsNullOrEmpty(cat.Location.Address))
+                    {
+                        <p class="text-sm text-gray-600 mb-2">Indirizzo:</p>
+                        <p class="font-medium text-gray-800">@cat.Location.Address</p>
+                    }
+                    
+                    <div class="mt-4 space-y-2">
+                        <button @onclick="CopyCoordinates" 
+                                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-lg text-sm transition-colors">
+                            📋 Copia Coordinate
+                        </button>
+                        <button @onclick="OpenInMaps" 
+                                class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg text-sm transition-colors">
+                            🗺️ Apri in Google Maps
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Actions Card -->
+                @if (AuthService.IsAuthenticated)
+                {
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">⚡ Azioni</h3>
+                        <div class="space-y-2">
+                            @if (CanEditCat())
+                            {
+                                <button @onclick="EditCat" 
+                                        class="w-full bg-streetcats-orange hover:bg-orange-600 text-white py-2 px-4 rounded-lg text-sm">
+                                    ✏️ Modifica
+                                </button>
+                                <button @onclick="() => showDeleteConfirm = true" 
+                                        class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm">
+                                    🗑️ Elimina
+                                </button>
+                            }
+                            <button @onclick="ShareCat" 
+                                    class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg text-sm">
+                                📤 Condividi
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <!-- Related Cats -->
+                @if (nearbyCats.Any())
+                {
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">🐱 Gatti Nelle Vicinanze</h3>
+                        <div class="space-y-3">
+                            @foreach (var nearbyCat in nearbyCats.Take(3))
+                            {
+                                <div class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+                                     @onclick="() => Navigation.NavigateTo($'/cat/{nearbyCat.Id}')">
+                                    <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                                        🐱
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-sm">@nearbyCat.Name</p>
+                                        <p class="text-xs text-gray-500">@nearbyCat.Color - @nearbyCat.Status</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        @if (nearbyCats.Count > 3)
+                        {
+                            <button @onclick="() => Navigation.NavigateTo('/cats')" 
+                                    class="w-full mt-4 text-streetcats-orange hover:text-orange-600 text-sm font-medium">
+                                Vedi tutti (@nearbyCats.Count gatti) →
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    @if (showDeleteConfirm)
+    {
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">⚠️</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Conferma Eliminazione</h3>
+                    <p class="text-gray-600 mb-6">
+                        Sei sicuro di voler eliminare la segnalazione di <strong>@cat.Name</strong>? 
+                        Questa azione non può essere annullata.
+                    </p>
+                    <div class="flex space-x-3">
+                        <button @onclick="() => showDeleteConfirm = false" 
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg">
+                            Annulla
+                        </button>
+                        <button @onclick="DeleteCat" 
+                                disabled="@isDeleting"
+                                class="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg">
+                            @if (isDeleting)
+                            {
+                                <span>Eliminazione...</span>
+                            }
+                            else
+                            {
+                                <span>🗑️ Elimina</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Error Messages -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="fixed bottom-4 left-4 right-4 z-50">
+            <ErrorAlert IsVisible="true" 
+                      Message="@errorMessage" 
+                      Type="ErrorAlert.AlertType.Error"
+                      OnDismiss="@(() => errorMessage = string.Empty)" />
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid CatId { get; set; }
+
+    private Cat? cat;
+    private List<Cat> nearbyCats = new();
+    private CommentModel newComment = new();
+    private bool isLoading = true;
+    private bool showAddComment = false;
+    private bool isSubmittingComment = false;
+    private bool showDeleteConfirm = false;
+    private bool isDeleting = false;
+    private string errorMessage = "";
+
+    private const string MAP_ID = "cat-detail-map";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCatDetails();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && cat != null)
+        {
+            await InitializeMap();
+        }
+    }
+
+    private async Task LoadCatDetails()
+    {
+        try
+        {
+            isLoading = true;
+            
+            var response = await CatService.GetCatByIdAsync(CatId);
+            
+            if (response.Success && response.Data != null)
+            {
+                cat = response.Data;
+                await LoadNearbyCats();
+            }
+            else
+            {
+                // Gatto non trovato
+                cat = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Errore caricamento: {ex.Message}";
+            Console.WriteLine($"Errore load cat details: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadNearbyCats()
+    {
+        if (cat == null) return;
+        
+        try
+        {
+            var response = await CatService.GetCatsInAreaAsync(
+                cat.Location.Latitude, cat.Location.Longitude, 2.0); // 2km radius
+            
+            if (response.Success && response.Data != null)
+            {
+                nearbyCats = response.Data
+                    .Where(c => c.Id != cat.Id) // Escludi il gatto corrente
+                    .Take(5)
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore load nearby cats: {ex}");
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        if (cat == null) return;
+        
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.initializeMap", 
+                MAP_ID, cat.Location.Latitude, cat.Location.Longitude, 15);
+            
+            // Aggiungi marker del gatto
+            var popupContent = $"<div class='text-center'><h4 class='font-bold'>{cat.Name}</h4><p>{cat.Color}</p></div>";
+            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.addMarker", 
+                MAP_ID, cat.Location.Latitude, cat.Location.Longitude, cat.Name, cat.Id.ToString(), popupContent);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore init map: {ex}");
+        }
+    }
+
+    private async Task SubmitComment()
+    {
+        if (cat == null || string.IsNullOrWhiteSpace(newComment.Text)) return;
+        
+        try
+        {
+            isSubmittingComment = true;
+            
+            var response = await CatService.AddCommentAsync(cat.Id, newComment.Text);
+            
+            if (response.Success && response.Data != null)
+            {
+                cat.Comments.Add(response.Data);
+                newComment.Text = "";
+                showAddComment = false;
+                StateHasChanged();
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Errore aggiunta commento";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Errore: {ex.Message}";
+        }
+        finally
+        {
+            isSubmittingComment = false;
+        }
+    }
+
+    private async Task DeleteCat()
+    {
+        if (cat == null) return;
+        
+        try
+        {
+            isDeleting = true;
+            
+            var response = await CatService.DeleteCatAsync(cat.Id);
+            
+            if (response.Success)
+            {
+                Navigation.NavigateTo("/cats");
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Errore eliminazione";
+                showDeleteConfirm = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Errore: {ex.Message}";
+            showDeleteConfirm = false;
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+
+    private bool CanEditCat()
+    {
+        return cat != null && AuthService.IsAuthenticated && 
+               cat.CreatedBy == AuthService.CurrentUser?.Id.ToString();
+    }
+
+    private void EditCat()
+    {
+        // TODO: Implementare pagina edit
+        Navigation.NavigateTo($"/edit-cat/{cat!.Id}");
+    }
+
+    private async Task CopyCoordinates()
+    {
+        if (cat == null) return;
+        
+        try
+        {
+            var coords = $"{cat.Location.Latitude:F6}, {cat.Location.Longitude:F6}";
+            await JSRuntime.InvokeAsync<bool>("StreetCatsInterop.copyToClipboard", coords);
+            // TODO: Mostra messaggio di successo
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore copy coordinates: {ex}");
+        }
+    }
+
+    private void OpenInMaps()
+    {
+        if (cat == null) return;
+        
+        var url = $"https://www.google.com/maps?q={cat.Location.Latitude},{cat.Location.Longitude}";
+        Navigation.NavigateTo(url, true);
+    }
+
+    private async Task ShareCat()
+    {
+        if (cat == null) return;
+        
+        try
+        {
+            var url = Navigation.ToAbsoluteUri($"/cat/{cat.Id}").ToString();
+            var text = $"🐱 Ho trovato {cat.Name} su STREETCATS! {url}";
+            
+            await JSRuntime.InvokeAsync<bool>("StreetCatsInterop.copyToClipboard", text);
+            // TODO: Mostra messaggio di successo o usa Web Share API
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore share: {ex}");
+        }
+    }
+
+    private string GetStatusIcon(CatStatus status)
+    {
+        return status switch
+        {
+            CatStatus.Avvistato => "🔍",
+            CatStatus.InCura => "🏥",
+            CatStatus.Adottato => "🏠",
+            CatStatus.Disperso => "❓",
+            _ => "🐱"
+        };
+    }
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        
+        if (span.TotalDays > 1)
+            return $"{(int)span.TotalDays} giorni fa";
+        else if (span.TotalHours > 1)
+            return $"{(int)span.TotalHours} ore fa";
+        else if (span.TotalMinutes > 1)
+            return $"{(int)span.TotalMinutes} minuti fa";
+        else
+            return "Ora";
+    }
+
+    private class CommentModel
+    {
+        public string Text { get; set; } = "";
+    }
+}

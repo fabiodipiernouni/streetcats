@@ -1,0 +1,395 @@
+@page "/map"
+@inject ICatService CatService
+@inject IMapService MapService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>🗺️ Mappa Gatti - STREETCATS</PageTitle>
+
+<!-- Header Controls -->
+<div class="bg-white shadow-md border-b-2 border-streetcats-orange">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <h1 class="text-2xl font-bold text-gray-800">🗺️ Mappa dei Gatti</h1>
+                <span class="bg-streetcats-orange text-white px-2 py-1 rounded-full text-sm font-medium">
+                    @cats.Count gatti
+                </span>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <!-- Geolocalizzazione -->
+                <button @onclick="GetUserLocation" 
+                        disabled="@isLoading"
+                        class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                    📍 La Mia Posizione
+                </button>
+                
+                <!-- Refresh -->
+                <button @onclick="RefreshMap" 
+                        disabled="@isLoading"
+                        class="bg-streetcats-green hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                    🔄 Aggiorna
+                </button>
+                
+                <!-- Filtri (Mobile Toggle) -->
+                <button @onclick="ToggleFilters" 
+                        class="sm:hidden bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-colors text-sm">
+                    🔍 Filtri
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filtri Desktop / Mobile Expandable -->
+        <div class="@(showFilters ? "block" : "hidden sm:block") mt-4 pt-4 border-t border-gray-200">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <!-- Filtro Stato -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stato</label>
+                    <select @bind="filterStatus" @onchange="ApplyFilters" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                        <option value="">Tutti</option>
+                        <option value="Avvistato">🔍 Avvistato</option>
+                        <option value="InCura">🏥 In Cura</option>
+                        <option value="Adottato">🏠 Adottato</option>
+                    </select>
+                </div>
+                
+                <!-- Filtro Colore -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Colore</label>
+                    <select @bind="filterColor" @onchange="ApplyFilters" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                        <option value="">Tutti</option>
+                        <option value="Arancione">🧡 Arancione</option>
+                        <option value="Grigio">🤍 Grigio</option>
+                        <option value="Nero">🖤 Nero</option>
+                        <option value="Bianco">🤍 Bianco</option>
+                        <option value="Tigrato">🐅 Tigrato</option>
+                    </select>
+                </div>
+                
+                <!-- Ricerca per Nome -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                    <input @bind="searchName" @onchange="ApplyFilters" 
+                           placeholder="Cerca per nome..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                </div>
+                
+                <!-- Raggio Ricerca -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Raggio (@radiusKm km)</label>
+                    <input type="range" @bind="radiusKm" @onchange="ApplyFilters" 
+                           min="1" max="20" step="1"
+                           class="w-full" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Container -->
+<div class="relative flex-1">
+    <div id="streetcats-map" class="w-full h-[calc(100vh-200px)] min-h-[400px]"></div>
+    
+    <!-- Loading Overlay -->
+    @if (isLoading)
+    {
+        <div class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-streetcats-orange mx-auto mb-4"></div>
+                <p class="text-gray-600">@loadingMessage</p>
+            </div>
+        </div>
+    }
+    
+    <!-- Floating Info Panel -->
+    @if (selectedCat != null)
+    {
+        <div class="absolute top-4 right-4 bg-white rounded-lg shadow-xl p-4 max-w-sm z-[1000]">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="text-lg font-bold text-streetcats-orange">@selectedCat.Name</h3>
+                <button @onclick="() => selectedCat = null" 
+                        class="text-gray-400 hover:text-gray-600">
+                    ✕
+                </button>
+            </div>
+            
+            <div class="space-y-2 text-sm">
+                <p><span class="font-medium">Colore:</span> @selectedCat.Color</p>
+                <p><span class="font-medium">Stato:</span> @GetStatusIcon(selectedCat.Status) @selectedCat.Status</p>
+                <p><span class="font-medium">Ultimo avvistamento:</span> @selectedCat.LastSeen.ToString("dd/MM/yyyy")</p>
+                
+                @if (!string.IsNullOrEmpty(selectedCat.Description))
+                {
+                    <p class="text-gray-600">@selectedCat.Description</p>
+                }
+            </div>
+            
+            <div class="mt-4 flex space-x-2">
+                <button @onclick="() => Navigation.NavigateTo($'/cat/{selectedCat.Id}')" 
+                        class="flex-1 bg-streetcats-orange hover:bg-orange-600 text-white px-3 py-2 rounded text-sm font-medium">
+                    👁️ Dettagli
+                </button>
+                <button @onclick="() => CenterMapOnCat(selectedCat)" 
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded text-sm font-medium">
+                    🎯 Centra
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Error Messages -->
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="fixed bottom-4 left-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg z-[1000]">
+        <div class="flex justify-between items-center">
+            <span>❌ @errorMessage</span>
+            <button @onclick="() => errorMessage = string.Empty" class="text-red-500 hover:text-red-700">✕</button>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Cat> cats = new();
+    private List<Cat> filteredCats = new();
+    private Cat? selectedCat;
+    private bool isLoading = true;
+    private bool showFilters = false;
+    private string loadingMessage = "Caricamento mappa...";
+    private string errorMessage = "";
+    
+    // Filtri
+    private string filterStatus = "";
+    private string filterColor = "";
+    private string searchName = "";
+    private int radiusKm = 10;
+    
+    // Posizione corrente utente
+    private double userLatitude = 40.8518; // Centro Napoli di default
+    private double userLongitude = 14.2681;
+    
+    private const string MAP_ID = "streetcats-map";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitializeMapAndData();
+        }
+    }
+
+    private async Task InitializeMapAndData()
+    {
+        try
+        {
+            loadingMessage = "Inizializzazione mappa...";
+            
+            // Inizializza mappa
+            var mapInitialized = await JSRuntime.InvokeAsync<bool>("StreetCatsInterop.initializeMap", 
+                MAP_ID, userLatitude, userLongitude, 13);
+            
+            if (!mapInitialized)
+            {
+                errorMessage = "Errore inizializzazione mappa";
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+            
+            // Carica dati gatti
+            await LoadCats();
+            
+            // Prova a ottenere posizione utente
+            await GetUserLocationQuietly();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Errore inizializzazione: {ex.Message}";
+            Console.WriteLine($"Errore init mappa: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadCats()
+    {
+        try
+        {
+            loadingMessage = "Caricamento gatti...";
+            StateHasChanged();
+            
+            var response = await CatService.GetAllCatsAsync();
+            
+            if (response.Success && response.Data != null)
+            {
+                cats = response.Data;
+                await ApplyFilters();
+                Console.WriteLine($"Caricati {cats.Count} gatti");
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Errore caricamento gatti";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Errore caricamento: {ex.Message}";
+            Console.WriteLine($"Errore load cats: {ex}");
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        try
+        {
+            // Applica filtri
+            filteredCats = cats.Where(cat =>
+                (string.IsNullOrEmpty(filterStatus) || cat.Status.ToString() == filterStatus) &&
+                (string.IsNullOrEmpty(filterColor) || cat.Color.Contains(filterColor, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrEmpty(searchName) || cat.Name.Contains(searchName, StringComparison.OrdinalIgnoreCase)) &&
+                MapService.IsPointInRadius(userLatitude, userLongitude, cat.Location.Latitude, cat.Location.Longitude, radiusKm)
+            ).ToList();
+            
+            await UpdateMapMarkers();
+            Console.WriteLine($"Filtrati {filteredCats.Count} gatti su {cats.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore filtri: {ex}");
+        }
+    }
+
+    private async Task UpdateMapMarkers()
+    {
+        try
+        {
+            // Pulisci marker esistenti
+            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.clearMarkers", MAP_ID);
+            
+            // Aggiungi nuovi marker
+            foreach (var cat in filteredCats)
+            {
+                var popupContent = $"<div class='text-center'>" +
+                    $"<h4 class='font-bold text-orange-500'>{cat.Name}</h4>" +
+                    $"<p class='text-sm text-gray-600'>{cat.Color} - {cat.Status}</p>" +
+                    $"<p class='text-xs text-gray-500'>{cat.LastSeen:dd/MM/yyyy}</p>" +
+                    $"<button onclick='selectCat(\"{cat.Id}\")' class='mt-2 bg-orange-500 text-white px-2 py-1 rounded text-xs'>Dettagli</button>" +
+                    $"</div>";
+                
+                await JSRuntime.InvokeVoidAsync("StreetCatsInterop.addMarker", 
+                    MAP_ID, cat.Location.Latitude, cat.Location.Longitude, cat.Name, cat.Id.ToString(), popupContent);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore update markers: {ex}");
+        }
+    }
+
+    private async Task GetUserLocation()
+    {
+        try
+        {
+            isLoading = true;
+            loadingMessage = "Rilevamento posizione...";
+            StateHasChanged();
+            
+            var location = await JSRuntime.InvokeAsync<dynamic>("StreetCatsInterop.getCurrentLocation");
+            
+            if (location != null)
+            {
+                userLatitude = (double)location.latitude;
+                userLongitude = (double)location.longitude;
+                
+                // Centra mappa sulla posizione utente
+                await JSRuntime.InvokeVoidAsync("StreetCatsInterop.setMapView", MAP_ID, userLatitude, userLongitude, 15);
+                
+                // Riapplica filtri con nuova posizione
+                await ApplyFilters();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Impossibile ottenere la posizione. Verifica i permessi del browser.";
+            Console.WriteLine($"Errore geolocation: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetUserLocationQuietly()
+    {
+        try
+        {
+            var location = await JSRuntime.InvokeAsync<dynamic>("StreetCatsInterop.getCurrentLocation");
+            if (location != null)
+            {
+                userLatitude = (double)location.latitude;
+                userLongitude = (double)location.longitude;
+                await ApplyFilters();
+            }
+        }
+        catch
+        {
+            // Ignora errori silenziosi
+        }
+    }
+
+    private async Task RefreshMap()
+    {
+        isLoading = true;
+        StateHasChanged();
+        await LoadCats();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private void ToggleFilters()
+    {
+        showFilters = !showFilters;
+    }
+
+    private async Task CenterMapOnCat(Cat cat)
+    {
+        await JSRuntime.InvokeVoidAsync("StreetCatsInterop.setMapView", 
+            MAP_ID, cat.Location.Latitude, cat.Location.Longitude, 16);
+    }
+
+    private string GetStatusIcon(CatStatus status)
+    {
+        return status switch
+        {
+            CatStatus.Avvistato => "🔍",
+            CatStatus.InCura => "🏥",
+            CatStatus.Adottato => "🏠",
+            CatStatus.Disperso => "❓",
+            _ => "🐱"
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            // Cleanup mappa se necessario
+            if (JSRuntime != null)
+            {
+                await JSRuntime.InvokeVoidAsync("StreetCatsInterop.clearMarkers", MAP_ID);
+            }
+        }
+        catch
+        {
+            // Ignora errori durante dispose
+        }
+    }
+}

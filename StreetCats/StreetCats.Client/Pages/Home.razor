@@ -1,83 +1,285 @@
-﻿@page "/"
+@page "/"
+@inject ICatService CatService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-<PageTitle>STREETCATS - Home</PageTitle>
+<PageTitle>🐱 STREETCATS - Home</PageTitle>
 
-<div class="container mx-auto p-8 bg-gray-50 min-h-screen">
-    <div class="text-center mb-8">
-        <h1 class="text-5xl font-bold text-streetcats-orange mb-4">
-            🐱 STREETCATS
+<!-- Hero Section -->
+<div class="bg-gradient-to-br from-orange-400 to-green-400 text-white py-16">
+    <div class="container mx-auto text-center">
+        <div class="text-6xl mb-4 animate-bounce">🐱</div>
+        <h1 class="text-5xl font-bold mb-4">
+            STREETCATS
         </h1>
-        <p class="text-gray-600 text-xl">
-            Piattaforma per l'avvistamento di gatti randagi
+        <p class="text-xl mb-8 opacity-90">
+            Piattaforma per l'avvistamento e la cura dei gatti randagi di Napoli
         </p>
-    </div>
-    
-    <div class="grid md:grid-cols-2 gap-6">
-        <!-- Card Benvenuto -->
-        <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">
-                👋 Benvenuto!
-            </h2>
-            <p class="text-gray-600 mb-4">
-                Questa è STREETCATS, la tua applicazione per segnalare e tracciare gatti randagi nella zona.
-            </p>
-            
-            <div class="space-y-2">
-                <button class="w-full bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
-                    🗺️ Visualizza Mappa
-                </button>
-                <button class="w-full bg-streetcats-green hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
-                    ➕ Segnala Gatto
-                </button>
-            </div>
+        
+        <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+            <button @onclick="NavigateToMap" 
+                    class="bg-white text-orange-500 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg">
+                🗺️ Visualizza Mappa
+            </button>
+            <button @onclick="NavigateToAddCat" 
+                    class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition-all transform hover:scale-105 shadow-lg">
+                ➕ Segnala Gatto
+            </button>
         </div>
         
-        <!-- Card Statistiche -->
-        <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 max-w-md mx-auto">
+                <p class="text-sm">@statusMessage</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container mx-auto py-8 px-4">
+    <!-- Statistics Cards -->
+    <div class="grid md:grid-cols-3 gap-6 mb-12">
+        <!-- Gatti Segnalati -->
+        <div class="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <div class="text-3xl mb-2">🐱</div>
+            <h3 class="text-2xl font-bold text-streetcats-orange mb-2">@totalCats</h3>
+            <p class="text-gray-600">Gatti Segnalati</p>
+        </div>
+        
+        <!-- Zone Attive -->
+        <div class="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <div class="text-3xl mb-2">📍</div>
+            <h3 class="text-2xl font-bold text-streetcats-green mb-2">@activeZones</h3>
+            <p class="text-gray-600">Zone Attive</p>
+        </div>
+        
+        <!-- Avvistamenti Recenti -->
+        <div class="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <div class="text-3xl mb-2">👀</div>
+            <h3 class="text-2xl font-bold text-blue-600 mb-2">@recentSightings</h3>
+            <p class="text-gray-600">Avvistamenti Oggi</p>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid md:grid-cols-2 gap-8 mb-12">
+        <!-- Per Utenti Non Autenticati -->
+        @if (!AuthService.IsAuthenticated)
+        {
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+                    👋 Inizia Subito
+                </h2>
+                <p class="text-gray-600 mb-4">
+                    Unisciti alla comunità STREETCATS per aiutare i gatti randagi di Napoli.
+                </p>
+                <div class="space-y-3">
+                    <button @onclick="() => Navigation.NavigateTo('/register')" 
+                            class="w-full bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        📝 Registrati Gratis
+                    </button>
+                    <button @onclick="() => Navigation.NavigateTo('/login')" 
+                            class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors">
+                        🔑 Accedi
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Per Utenti Autenticati -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+                    🎯 Le Tue Azioni
+                </h2>
+                <p class="text-gray-600 mb-4">
+                    Ciao <span class="font-semibold text-streetcats-orange">@AuthService.CurrentUser?.Username</span>! 
+                    Cosa vuoi fare oggi?
+                </p>
+                <div class="space-y-3">
+                    <button @onclick="NavigateToAddCat" 
+                            class="w-full bg-streetcats-green hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        ➕ Segnala Nuovo Gatto
+                    </button>
+                    <button @onclick="() => Navigation.NavigateTo('/cats')" 
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                        📋 I Miei Avvistamenti
+                    </button>
+                </div>
+            </div>
+        }
+        
+        <!-- Come Funziona -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">
-                📊 Statistiche
+                ❓ Come Funziona
             </h2>
             <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-600">Gatti segnalati:</span>
-                    <span class="font-bold text-streetcats-orange text-xl">42</span>
+                <div class="flex items-start space-x-3">
+                    <span class="text-streetcats-orange font-bold">1.</span>
+                    <p class="text-gray-600">Avvista un gatto randagio nella tua zona</p>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-600">Zone attive:</span>
-                    <span class="font-bold text-streetcats-green text-xl">7</span>
+                <div class="flex items-start space-x-3">
+                    <span class="text-streetcats-orange font-bold">2.</span>
+                    <p class="text-gray-600">Segnalalo sulla mappa con foto e dettagli</p>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-600">Ultimi avvistamenti:</span>
-                    <span class="font-bold text-blue-600 text-xl">5</span>
+                <div class="flex items-start space-x-3">
+                    <span class="text-streetcats-orange font-bold">3.</span>
+                    <p class="text-gray-600">La comunità collabora per aiutarlo</p>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Sezione Recent Activity -->
-    <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6">
-            🕒 Attività Recente
-        </h2>
-        <div class="space-y-4">
-            <div class="border-l-4 border-streetcats-orange pl-4 py-2">
-                <p class="text-gray-600">
-                    <span class="font-semibold">Mario Rossi</span> ha segnalato un gatto arancione in Via Roma
-                </p>
-                <p class="text-sm text-gray-400">2 ore fa</p>
+    <!-- Recent Activity Section -->
+    @if (recentCats.Any())
+    {
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    🕒 Attività Recente
+                </h2>
+                <button @onclick="() => Navigation.NavigateTo('/cats')" 
+                        class="text-streetcats-orange hover:text-orange-600 font-medium">
+                    Vedi tutti →
+                </button>
             </div>
-            <div class="border-l-4 border-streetcats-green pl-4 py-2">
-                <p class="text-gray-600">
-                    <span class="font-semibold">Lucia Verdi</span> ha confermato l'avvistamento in Piazza Garibaldi
-                </p>
-                <p class="text-sm text-gray-400">4 ore fa</p>
-            </div>
-            <div class="border-l-4 border-blue-500 pl-4 py-2">
-                <p class="text-gray-600">
-                    <span class="font-semibold">Giovanni Bianchi</span> ha aggiunto una foto al gatto "Micio"
-                </p>
-                <p class="text-sm text-gray-400">6 ore fa</p>
+            
+            <div class="space-y-4">
+                @foreach (var cat in recentCats.Take(5))
+                {
+                    <div class="border-l-4 border-streetcats-orange pl-4 py-2 hover:bg-orange-50 transition-colors cursor-pointer"
+                         @onclick="() => Navigation.NavigateTo($'/cat/{cat.Id}')">
+                        <p class="text-gray-600">
+                            <span class="font-semibold">@cat.CreatedByName</span> 
+                            ha segnalato <span class="font-semibold text-streetcats-orange">@cat.Name</span> 
+                            (@cat.Color) in @GetShortAddress(cat.Location.Address)
+                        </p>
+                        <p class="text-sm text-gray-400">@GetTimeAgo(cat.CreatedAt)</p>
+                    </div>
+                }
             </div>
         </div>
-    </div>
+    }
 </div>
+
+<!-- Loading Overlay -->
+@if (isLoading)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 text-center shadow-xl">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-streetcats-orange mx-auto mb-4"></div>
+            <p class="text-gray-600 font-medium">Caricamento dati...</p>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string statusMessage = "";
+    private int totalCats = 0;
+    private int activeZones = 0;
+    private int recentSightings = 0;
+    private List<Cat> recentCats = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // Carica tutti i gatti per le statistiche
+            var response = await CatService.GetAllCatsAsync();
+            
+            if (response.Success && response.Data != null)
+            {
+                var allCats = response.Data;
+                
+                // Calcola statistiche
+                totalCats = allCats.Count;
+                activeZones = allCats.GroupBy(c => c.Location.City).Count();
+                recentSightings = allCats.Count(c => c.LastSeen.Date == DateTime.Today);
+                
+                // Prendi i 5 gatti più recenti
+                recentCats = allCats
+                    .OrderByDescending(c => c.CreatedAt)
+                    .ToList();
+
+                statusMessage = $"Caricati {totalCats} gatti da {activeZones} zone";
+            }
+            else
+            {
+                statusMessage = "Errore caricamento dati: " + response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "Errore: " + ex.Message;
+            Console.WriteLine($"Errore caricamento dashboard: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task NavigateToMap()
+    {
+        // Opzionalmente richiedi geolocalizzazione prima di navigare
+        try
+        {
+            var location = await JSRuntime.InvokeAsync<object>("StreetCatsInterop.getCurrentLocation");
+            Navigation.NavigateTo("/map");
+        }
+        catch
+        {
+            // Se la geolocalizzazione fallisce, naviga comunque
+            Navigation.NavigateTo("/map");
+        }
+    }
+
+    private void NavigateToAddCat()
+    {
+        if (AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/add-cat");
+        }
+        else
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    private string GetShortAddress(string fullAddress)
+    {
+        if (string.IsNullOrEmpty(fullAddress))
+            return "Posizione sconosciuta";
+        
+        // Prendi solo la prima parte dell'indirizzo
+        var parts = fullAddress.Split(',');
+        return parts.Length > 0 ? parts[0].Trim() : fullAddress;
+    }
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        
+        if (span.TotalDays > 1)
+            return $"{(int)span.TotalDays} giorni fa";
+        else if (span.TotalHours > 1)
+            return $"{(int)span.TotalHours} ore fa";
+        else if (span.TotalMinutes > 1)
+            return $"{(int)span.TotalMinutes} minuti fa";
+        else
+            return "Ora";
+    }
+}

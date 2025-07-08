@@ -1,45 +1,156 @@
-/* STREETCATS Custom Styling */
-.nav-link:hover {
-    background-color: rgba(249, 115, 22, 0.1) !important;
-    color: #f97316 !important;
-}
+/* 🐱 STREETCATS Custom Navigation Styling */
 
-.nav-link.active {
-    background-color: #f97316 !important;
+/* Brand Header */
+.nav-brand {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    margin: -0.5rem -1rem 0 -1rem;
+    border-radius: 0 0 1rem 1rem;
     color: white !important;
 }
 
-    .nav-link.active .bi {
-        color: white !important;
-    }
+.brand-emoji {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
 
-/* Brand styling */
-.nav-item strong {
-    font-size: 1.1rem;
+.brand-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: white !important;
+}
+
+.brand-accent {
+    color: #22c55e !important;
+}
+
+.brand-subtitle {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-weight: 400;
+    margin-top: 2px;
+}
+
+/* Navigation Dividers */
+.nav-divider {
+    border-color: rgba(249, 115, 22, 0.3);
+    margin: 0.5rem 1rem;
+}
+
+/* Section Titles */
+.nav-section-title {
+    font-weight: 600;
+    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-/* Custom colors for icons */
+/* Navigation Links */
+.nav-link {
+    color: #374151 !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    margin: 0.25rem 0;
+    padding: 0.75rem 1rem !important;
+}
+
+    .nav-link:hover {
+        background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%) !important;
+        color: #f97316 !important;
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+    }
+
+    .nav-link.active {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        transform: translateX(2px);
+    }
+
+        .nav-link.active .bi {
+            color: white !important;
+        }
+
+/* Icon Colors */
 .bi-house-door-fill-nav-menu::before {
     color: #f97316;
+    font-weight: 600;
 }
 
 .bi-grid-3x3-gap-fill-nav-menu::before {
     color: #f97316;
+    font-weight: 600;
 }
 
 .bi-geo-alt-fill-nav-menu::before {
     color: #22c55e;
+    font-weight: 600;
 }
 
 .bi-plus-circle-fill-nav-menu::before {
     color: #22c55e;
+    font-weight: 600;
 }
 
 .bi-person-fill-nav-menu::before {
     color: #6b7280;
+    font-weight: 600;
 }
 
 .bi-person-plus-fill-nav-menu::before {
     color: #6b7280;
+    font-weight: 600;
 }
+
+/* Footer */
+.nav-footer {
+    border-top: 1px solid rgba(249, 115, 22, 0.2);
+    margin-top: 1rem;
+    background: rgba(249, 115, 22, 0.05);
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640.98px) {
+    .brand-title {
+        font-size: 1rem;
+    }
+
+    .brand-subtitle {
+        font-size: 0.7rem;
+    }
+}
+
+/* Smooth Animations */
+.nav-link {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover Effects Enhancement */
+.nav-item {
+    position: relative;
+}
+
+    .nav-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 0;
+        background: linear-gradient(to bottom, #f97316, #22c55e);
+        border-radius: 0 2px 2px 0;
+        transition: height 0.3s ease;
+    }
+
+    .nav-item:hover::before {
+        height: 60%;
+    }
+
+    .nav-item:has(.nav-link.active)::before {
+        height: 80%;
+        box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+    }
