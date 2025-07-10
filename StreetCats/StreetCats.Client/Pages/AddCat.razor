@@ -6,9 +6,25 @@
 @inject NavigationManager Navigation
 @using StreetCats.Client.Components.Common
 @using System.ComponentModel.DataAnnotations
-@attribute [Authorize]
 
 <PageTitle>➕ Segnala Gatto - STREETCATS</PageTitle>
+
+<!-- Check Authentication -->
+@if (!AuthService.IsAuthenticated)
+{
+    <div class="min-h-screen bg-gradient-to-br from-red-400 to-orange-400 flex items-center justify-center py-12 px-4">
+        <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center">
+            <div class="text-6xl mb-4">🔒</div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Accesso Richiesto</h2>
+            <p class="text-gray-600 mb-6">Devi effettuare il login per segnalare un gatto</p>
+            <button @onclick="@(() => Navigation.NavigateTo("/login"))" 
+                    class="bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg w-full">
+                🔑 Vai al Login
+            </button>
+        </div>
+    </div>
+    return;
+}
 
 <!-- Header -->
 <div class="bg-gradient-to-r from-streetcats-orange to-streetcats-green text-white py-8">
@@ -76,7 +92,7 @@
                             <InputText @bind-Value="catModel.Name" 
                                      placeholder="Es. Micio, Pallina, Gatto Rosso..."
                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-streetcats-orange focus:border-transparent" />
-                            <ValidationMessage For="() => catModel.Name" class="text-red-500 text-sm mt-1" />
+                            <ValidationMessage For="@(() => catModel.Name)" class="text-red-500 text-sm mt-1" />
                         </div>
 
                         <!-- Colore -->
@@ -278,7 +294,7 @@
                     }
                     else
                     {
-                        <button type="button" @onclick="() => Navigation.NavigateTo('/')" 
+                        <button type="button" @onclick="@(() => Navigation.NavigateTo("/"))" 
                                 class="text-gray-500 hover:text-gray-700 font-medium py-3 px-6">
                             ← Annulla
                         </button>
@@ -330,12 +346,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Verifica autenticazione
-        if (!AuthService.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
+        // Inizializza il servizio di autenticazione
+        await AuthService.InitializeAsync();
+        
+        // Il controllo di autenticazione è ora gestito nel markup
+        // Se non autenticato, mostrerà la schermata di login
 
         // Inizializza coordinate default (centro Napoli)
         catModel.Location.Latitude = 40.8518;
@@ -345,7 +360,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && currentStep == 2)
+        if (firstRender && currentStep == 2 && AuthService.IsAuthenticated)
         {
             await InitializeMap();
         }

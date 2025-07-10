@@ -6,32 +6,32 @@ namespace StreetCats.Client.Models;
 
 /// <summary>
 /// Modello principale per rappresentare un gatto randagio
-/// Usa Guid come ID per compatibilit‡ Blazor WASM + MongoDB
+/// Usa Guid come ID per compatibilit√† Blazor WASM + MongoDB
 /// </summary>
 public class Cat
 {
     /// <summary>
-    /// ID unico del gatto - Guid per compatibilit‡ MongoDB
+    /// ID unico del gatto - Guid per compatibilit√† MongoDB
     /// </summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
     /// Nome del gatto (se conosciuto)
     /// </summary>
-    [Required(ErrorMessage = "Il nome Ë obbligatorio")]
-    [StringLength(50, ErrorMessage = "Il nome non puÚ superare 50 caratteri")]
+    [Required(ErrorMessage = "Il nome √® obbligatorio")]
+    [StringLength(50, ErrorMessage = "Il nome non pu√≤ superare 50 caratteri")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Descrizione del gatto e delle sue caratteristiche
     /// </summary>
-    [StringLength(500, ErrorMessage = "La descrizione non puÚ superare 500 caratteri")]
+    [StringLength(500, ErrorMessage = "La descrizione non pu√≤ superare 500 caratteri")]
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
     /// Colore predominante del gatto
     /// </summary>
-    [Required(ErrorMessage = "Il colore Ë obbligatorio")]
+    [Required(ErrorMessage = "Il colore √® obbligatorio")]
     public string Color { get; set; } = string.Empty;
 
     /// <summary>
@@ -82,7 +82,7 @@ public enum CatStatus
 {
     Avvistato,
     Adottato,
-    Scomparso,
+    Disperso,
     InCura,
     Deceduto
 }

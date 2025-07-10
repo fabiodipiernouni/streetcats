@@ -76,11 +76,11 @@
                     Unisciti alla comunità STREETCATS per aiutare i gatti randagi di Napoli.
                 </p>
                 <div class="space-y-3">
-                    <button @onclick="() => Navigation.NavigateTo('/register')" 
+                    <button @onclick="@(() => Navigation.NavigateTo("/register"))"
                             class="w-full bg-streetcats-orange hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
                         📝 Registrati Gratis
                     </button>
-                    <button @onclick="() => Navigation.NavigateTo('/login')" 
+                    <button @onclick="@(() => Navigation.NavigateTo("/login"))"
                             class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors">
                         🔑 Accedi
                     </button>
@@ -103,7 +103,7 @@
                             class="w-full bg-streetcats-green hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
                         ➕ Segnala Nuovo Gatto
                     </button>
-                    <button @onclick="() => Navigation.NavigateTo('/cats')" 
+                    <button @onclick="@(() => Navigation.NavigateTo("/cats"))"
                             class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
                         📋 I Miei Avvistamenti
                     </button>
@@ -141,7 +141,7 @@
                 <h2 class="text-2xl font-semibold text-gray-800">
                     🕒 Attività Recente
                 </h2>
-                <button @onclick="() => Navigation.NavigateTo('/cats')" 
+                <button @onclick="@(() => Navigation.NavigateTo("/cats"))" 
                         class="text-streetcats-orange hover:text-orange-600 font-medium">
                     Vedi tutti →
                 </button>
@@ -151,7 +151,7 @@
                 @foreach (var cat in recentCats.Take(5))
                 {
                     <div class="border-l-4 border-streetcats-orange pl-4 py-2 hover:bg-orange-50 transition-colors cursor-pointer"
-                         @onclick="() => Navigation.NavigateTo($'/cat/{cat.Id}')">
+                         @onclick="@(() => Navigation.NavigateTo($"/cat/{cat.Id}"))">
                         <p class="text-gray-600">
                             <span class="font-semibold">@cat.CreatedByName</span> 
                             ha segnalato <span class="font-semibold text-streetcats-orange">@cat.Name</span> 
