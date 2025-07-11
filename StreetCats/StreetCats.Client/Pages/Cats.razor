@@ -7,17 +7,17 @@
 <PageTitle>🐱 Tutti i Gatti - STREETCATS</PageTitle>
 
 <!-- Header -->
-<div class="bg-gradient-to-r from-streetcats-orange to-streetcats-green text-white py-8">
-    <div class="container mx-auto">
+<div class="bg-gradient-to-r from-blue-600 to-teal-600 text-white py-8">
+    <div class="container mx-auto px-4">
         <div class="flex flex-col sm:flex-row justify-between items-center">
             <div>
-                <h1 class="text-4xl font-bold mb-2">🐱 Tutti i Gatti</h1>
-                <p class="text-lg opacity-90">@totalCats gatti segnalati dalla comunità</p>
+                <h1 class="text-4xl font-bold mb-2 text-white drop-shadow-lg">🐱 Tutti i Gatti</h1>
+                <p class="text-lg opacity-90 text-white drop-shadow">@totalCats gatti segnalati dalla comunità</p>
             </div>
             @if (AuthService.IsAuthenticated)
             {
                 <button @onclick="@(() => Navigation.NavigateTo("/add-cat"))"
-                        class="bg-white text-streetcats-orange font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors shadow-lg">
+                        class="bg-white text-blue-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors shadow-lg mt-4 sm:mt-0 sm:ml-6">
                     ➕ Segnala Gatto
                 </button>
             }
@@ -118,9 +118,9 @@
             <LoadingSpinner IsVisible="true" Message="Caricamento gatti..." Size="LoadingSpinner.LoadingSize.Large" />
         </div>
     }
-    <!-- Empty State -->
-    else if (!filteredCats.Any())
+    else if (!filteredCats.Any()) 
     {
+        <!-- Empty State -->
         <div class="text-center py-16">
             <div class="text-6xl mb-4">😿</div>
             <h3 class="text-2xl font-bold text-gray-800 mb-4">Nessun gatto trovato</h3>
@@ -152,9 +152,9 @@
             }
         </div>
     }
-    <!-- Cats Grid -->
     else
     {
+        <!-- Cats Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach (var cat in filteredCats)
             {

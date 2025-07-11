@@ -30,14 +30,14 @@ else if (cat == null)
 else
 {
     <!-- Cat Details -->
-    <div class="bg-gradient-to-r from-streetcats-orange to-streetcats-green text-white py-8">
-        <div class="container mx-auto">
+    <div class="bg-gradient-to-r from-orange-500 to-orange-700 text-white py-8">
+        <div class="container mx-auto px-4">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-4xl font-bold mb-2">🐱 @cat.Name</h1>
                     <p class="text-lg opacity-90">@GetStatusIcon(cat.Status) @cat.Status - @cat.Color</p>
                 </div>
-                <div class="text-right">
+                <div class="text-right pr-4">
                     <p class="text-sm opacity-75">Segnalato da</p>
                     <p class="font-semibold">@cat.CreatedByName</p>
                     <p class="text-sm opacity-75">@cat.CreatedAt.ToString("dd/MM/yyyy")</p>

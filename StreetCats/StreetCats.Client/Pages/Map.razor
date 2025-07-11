@@ -318,7 +318,7 @@
             // Pulisci marker esistenti
             await JSRuntime.InvokeVoidAsync("StreetCatsInterop.clearMarkers", MAP_ID);
             
-            // Aggiungi nuovi marker
+            // Aggiungi nuovi marker con callback
             foreach (var cat in filteredCats)
             {
                 var popupContent = $"<div class='text-center'>" +
@@ -327,7 +327,7 @@
                     $"<p class='text-xs text-gray-500'>{cat.LastSeen:dd/MM/yyyy}</p>" +
                     $"</div>";
                 
-                await JSRuntime.InvokeVoidAsync("StreetCatsInterop.addMarker", 
+                await JSRuntime.InvokeVoidAsync("StreetCatsInterop.addMarkerWithCallback", 
                     MAP_ID, cat.Location.Latitude, cat.Location.Longitude, cat.Name, cat.Id.ToString(), popupContent);
             }
         }

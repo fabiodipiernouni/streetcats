@@ -354,18 +354,19 @@ window.StreetCatsInterop = {
             console.error('❌ Errore configurazione click mappa:', error);
             return false;
         }
-    }
+    },
 
     // 🐱 MARKER INTERATTIVI CON CALLBACK
-/**
- * Variabile globale per il callback dei marker
- */
-markerClickCallback: null,
 
     /**
-     * Imposta il callback per il click sui marker
+     * Variabile globale per il callback dei marker
      */
-    setMarkerClickCallback: function (dotNetReference) {
+    markerClickCallback: null,
+
+    /**
+     * Imposta il callback per il click sui marker (chiamato da Map.razor)
+     */
+    setSelectCatCallback: function (dotNetReference) {
         try {
             this.markerClickCallback = dotNetReference;
             console.log('🎯 Callback marker click configurato');
@@ -412,7 +413,7 @@ markerClickCallback: null,
 
                 // Chiama il callback C# se configurato
                 if (self.markerClickCallback) {
-                    self.markerClickCallback.invokeMethodAsync('OnMarkerClick', catId);
+                    self.markerClickCallback.invokeMethodAsync('SelectCat', catId);
                 }
 
                 // Impedisci che il click si propaghi alla mappa
