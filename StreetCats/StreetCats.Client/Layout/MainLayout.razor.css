@@ -1,5 +1,24 @@
 /* STREETCATS Modern Layout Styles */
 
+#blazor-error-ui {
+    display: none !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #ffebee;
+    border-top: 1px solid #f44336;
+    padding: 1rem;
+    z-index: 9999;
+    color: #d32f2f;
+    font-size: 14px;
+}
+
+    #blazor-error-ui.show {
+        display: block !important;
+    }
+
+
 /* Navigation Links Styling */
 .nav-link {
     @apply text-gray-700 hover:text-streetcats-orange px-3 py-2 rounded-md text-sm font-medium transition-all duration-200;

@@ -30,8 +30,8 @@
         
         @if (!string.IsNullOrEmpty(statusMessage))
         {
-            <div class="bg-white bg-opacity-20 rounded-lg p-4 max-w-md mx-auto">
-                <p class="text-sm">@statusMessage</p>
+            <div class="bg-white bg-opacity-90 rounded-lg p-4 max-w-md mx-auto border border-orange-200">
+                <p class="text-sm text-gray-800 font-medium">@statusMessage</p>
             </div>
         }
     </div>
@@ -213,7 +213,7 @@
                     .OrderByDescending(c => c.CreatedAt)
                     .ToList();
 
-                statusMessage = $"Caricati {totalCats} gatti da {activeZones} zone";
+                statusMessage = $"Caricati {totalCats} gatti da {activeZones} " + (activeZones > 1 ? "zone": "zona");
             }
             else
             {
