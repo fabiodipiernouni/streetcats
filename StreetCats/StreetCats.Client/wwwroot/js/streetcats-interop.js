@@ -355,6 +355,81 @@ window.StreetCatsInterop = {
             return false;
         }
     }
+
+    // 🐱 MARKER INTERATTIVI CON CALLBACK
+/**
+ * Variabile globale per il callback dei marker
+ */
+markerClickCallback: null,
+
+    /**
+     * Imposta il callback per il click sui marker
+     */
+    setMarkerClickCallback: function (dotNetReference) {
+        try {
+            this.markerClickCallback = dotNetReference;
+            console.log('🎯 Callback marker click configurato');
+            return true;
+        } catch (error) {
+            console.error('❌ Errore configurazione callback marker:', error);
+            return false;
+        }
+    },
+
+    /**
+     * Aggiunge un marker con callback per il click
+     */
+    addMarkerWithCallback: function (elementId, latitude, longitude, title, catId, popupContent = null) {
+        try {
+            const map = this.maps.get(elementId);
+            if (!map) {
+                console.error(`❌ Mappa ${elementId} non trovata`);
+                return false;
+            }
+
+            // Crea marker personalizzato per gatto
+            const catIcon = L.divIcon({
+                html: '🐱',
+                iconSize: [30, 30],
+                className: 'cat-marker',
+                iconAnchor: [15, 15]
+            });
+
+            const marker = L.marker([latitude, longitude], { icon: catIcon })
+                .addTo(map);
+
+            // Aggiungi popup se fornito
+            if (popupContent) {
+                marker.bindPopup(popupContent);
+            } else if (title) {
+                marker.bindPopup(`<b>${title}</b><br/>Clicca per dettagli`);
+            }
+
+            // Aggiungi evento click sul marker
+            const self = this;
+            marker.on('click', function (e) {
+                console.log('🐱 Click marker:', { catId, title });
+
+                // Chiama il callback C# se configurato
+                if (self.markerClickCallback) {
+                    self.markerClickCallback.invokeMethodAsync('OnMarkerClick', catId);
+                }
+
+                // Impedisci che il click si propaghi alla mappa
+                L.DomEvent.stopPropagation(e);
+            });
+
+            // Salva marker con ID gatto
+            const markers = this.markers.get(elementId);
+            markers.push({ marker, catId, title });
+
+            console.log(`🐱 Marker con callback aggiunto:`, { elementId, catId, title, latitude, longitude });
+            return true;
+        } catch (error) {
+            console.error('❌ Errore aggiunta marker con callback:', error);
+            return false;
+        }
+    }
 };
 
 // 🚀 INIZIALIZZAZIONE

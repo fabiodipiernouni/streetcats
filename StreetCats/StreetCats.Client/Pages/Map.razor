@@ -219,6 +219,10 @@
     {
         if (firstRender)
         {
+            // Registra il callback per la selezione del gatto
+            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.setSelectCatCallback", 
+                DotNetObjectReference.Create(this));
+            
             await InitializeMapAndData();
         }
     }
@@ -321,7 +325,6 @@
                     $"<h4 class='font-bold text-orange-500'>{cat.Name}</h4>" +
                     $"<p class='text-sm text-gray-600'>{cat.Color} - {cat.Status}</p>" +
                     $"<p class='text-xs text-gray-500'>{cat.LastSeen:dd/MM/yyyy}</p>" +
-                    $"<button onclick='selectCat(\"{cat.Id}\")' class='mt-2 bg-orange-500 text-white px-2 py-1 rounded text-xs'>Dettagli</button>" +
                     $"</div>";
                 
                 await JSRuntime.InvokeVoidAsync("StreetCatsInterop.addMarker", 
@@ -331,6 +334,23 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Errore update markers: {ex}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task SelectCat(string catId)
+    {
+        try
+        {
+            if (Guid.TryParse(catId, out var guid))
+            {
+                selectedCat = filteredCats.FirstOrDefault(c => c.Id == guid);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore selezione gatto: {ex}");
         }
     }
 
