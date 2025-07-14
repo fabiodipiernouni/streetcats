@@ -2,8 +2,9 @@ using Microsoft.JSInterop;
 using StreetCats.Client.Models;
 using StreetCats.Client.Services.Interfaces;
 using System.Text.Json;
+using StreetCats.Client.Services.Configuration.Interfaces;
 
-namespace StreetCats.Client.Services.Implementation;
+namespace StreetCats.Client.Services.Implementations;
 
 /// <summary>
 /// Implementazione REALE del servizio per operazioni di geolocalizzazione e mappe

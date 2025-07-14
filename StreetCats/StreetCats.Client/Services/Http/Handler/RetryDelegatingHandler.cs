@@ -1,11 +1,14 @@
-using StreetCats.Client.Services.Implementation;
-using StreetCats.Client.Services.Exceptions;
 using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using StreetCats.Client.Models.Api;
+using StreetCats.Client.Services.Implementations;
+using StreetCats.Client.Services.Exceptions;
+using StreetCats.Client.Services.Configuration.Interfaces;
+using StreetCats.Client.Services.Exceptions.Interfaces;
 
-namespace StreetCats.Client.Services.Http;
+namespace StreetCats.Client.Services.Http.Handler;
 
 /// <summary>
 /// DelegatingHandler per retry automatico con exponential backoff

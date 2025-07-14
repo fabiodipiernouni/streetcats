@@ -1,12 +1,13 @@
-using StreetCats.Client.Services.Implementation;
+using StreetCats.Client.Services.Implementations;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using StreetCats.Client.Services.Configuration.Interfaces;
 
-namespace StreetCats.Client.Services.Http;
+namespace StreetCats.Client.Services.Http.Handler;
 
 /// <summary>
 /// DelegatingHandler per logging automatico di tutte le richieste HTTP

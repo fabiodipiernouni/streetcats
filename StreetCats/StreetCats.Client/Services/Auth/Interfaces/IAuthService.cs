@@ -3,7 +3,7 @@ using StreetCats.Client.Models.DTOs;
 using System;
 using System.Threading.Tasks;
 
-namespace StreetCats.Client.Services.Interfaces;
+namespace StreetCats.Client.Services.Auth.Interfaces;
 
 /// <summary>
 /// Servizio per la gestione dell'autenticazione e autorizzazione
@@ -16,7 +16,7 @@ public interface IAuthService
     User? CurrentUser { get; }
 
     /// <summary>
-    /// Indica se l'utente è attualmente autenticato
+    /// Indica se l'utente Ã¨ attualmente autenticato
     /// </summary>
     bool IsAuthenticated { get; }
 
@@ -55,7 +55,7 @@ public interface IAuthService
     Task InitializeAsync();
 
     /// <summary>
-    /// Verifica se il token è valido e non scaduto
+    /// Verifica se il token Ã¨ valido e non scaduto
     /// </summary>
     Task<bool> ValidateTokenAsync();
 }

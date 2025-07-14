@@ -1,11 +1,10 @@
 using System.Threading;
-using StreetCats.Client.Services.Interfaces;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace StreetCats.Client.Services.Interfaces;
+namespace StreetCats.Client.Services.Auth.Interfaces;
 
 /// <summary>
 /// HttpClient personalizzato che gestisce automaticamente JWT e refresh token

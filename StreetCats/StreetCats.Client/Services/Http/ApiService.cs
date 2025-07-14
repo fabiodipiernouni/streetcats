@@ -1,13 +1,17 @@
 using StreetCats.Client.Models.DTOs;
-using StreetCats.Client.Services.Implementation;
+using StreetCats.Client.Services.Implementations;
 using StreetCats.Client.Services.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Threading.Tasks;
+using StreetCats.Client.Services.Auth.Interfaces;
+using StreetCats.Client.Services.Configuration.Interfaces;
+using StreetCats.Client.Services.Exceptions.Interfaces;
 
 namespace StreetCats.Client.Services.Http;
 

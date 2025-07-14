@@ -5,35 +5,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading.Tasks;
+using StreetCats.Client.Services.Exceptions.Interfaces;
 
-namespace StreetCats.Client.Services.Exceptions;
-
-/// <summary>
-/// Gestione centralizzata delle eccezioni API con logging e mapping degli errori
-/// Converte eccezioni HTTP in risposte user-friendly
-/// </summary>
-public interface IApiExceptionHandler
-{
-    /// <summary>
-    /// Gestisce un'eccezione HTTP e restituisce una ApiResponse appropriata
-    /// </summary>
-    Task<ApiResponse<T>> HandleExceptionAsync<T>(Exception exception, string operation = "");
-
-    /// <summary>
-    /// Gestisce una HttpResponseMessage di errore
-    /// </summary>
-    Task<ApiResponse<T>> HandleHttpErrorAsync<T>(HttpResponseMessage response, string operation = "");
-
-    /// <summary>
-    /// Determina se un errore è retry-able
-    /// </summary>
-    bool IsRetryableError(Exception exception);
-
-    /// <summary>
-    /// Determina se un errore è retry-able basandosi sul status code
-    /// </summary>
-    bool IsRetryableStatusCode(HttpStatusCode statusCode);
-}
+namespace StreetCats.Client.Services.Exceptions.Implementations;
 
 public class ApiExceptionHandler : IApiExceptionHandler
 {
@@ -314,39 +288,5 @@ public class ApiExceptionHandler : IApiExceptionHandler
     #endregion
 }
 
-/// <summary>
-/// Eccezione personalizzata per errori API
-/// </summary>
-public class ApiException : Exception
-{
-    public int StatusCode { get; }
-    public List<string> Errors { get; }
-    public bool IsRetryable { get; }
 
-    public ApiException(string message, int statusCode = 0, List<string>? errors = null, bool isRetryable = false)
-        : base(message)
-    {
-        StatusCode = statusCode;
-        Errors = errors ?? new List<string>();
-        IsRetryable = isRetryable;
-    }
 
-    public ApiException(string message, Exception innerException, int statusCode = 0)
-        : base(message, innerException)
-    {
-        StatusCode = statusCode;
-        Errors = new List<string>();
-        IsRetryable = false;
-    }
-}
-
-/// <summary>
-/// Modello per deserializzare risposte di errore strutturate dal server
-/// </summary>
-internal class ApiErrorResponse
-{
-    public string? Message { get; set; }
-    public List<string>? Errors { get; set; }
-    public string? Type { get; set; }
-    public string? TraceId { get; set; }
-}

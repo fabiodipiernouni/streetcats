@@ -1,6 +1,10 @@
 using System;
+using StreetCats.Client.Models;
 
 using System.Collections.Generic;
+
+namespace StreetCats.Client.Models.DTOs;
+
 
 /// <summary>
 /// Response per autenticazione con token JWT

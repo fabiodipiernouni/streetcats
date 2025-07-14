@@ -2,9 +2,17 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using StreetCats.Client;
 using StreetCats.Client.Services.Interfaces;
-using StreetCats.Client.Services.Implementation;
+using StreetCats.Client.Services.Implementations;
 using StreetCats.Client.Services.Http;
+using StreetCats.Client.Services.Http.Handler;
 using StreetCats.Client.Services.Exceptions;
+using StreetCats.Client.Services.Exceptions.Interfaces;
+using StreetCats.Client.Services.Exceptions.Implementations;
+using StreetCats.Client.Services.Auth.Interfaces;
+using StreetCats.Client.Services.Auth.Implementations;
+using StreetCats.Client.Services.Configuration.Interfaces;
+using StreetCats.Client.Services.Configuration.Implementations;
+using static StreetCats.Client.Services.Configuration.Extensions.AppSettingsServiceCollectionExtensions;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

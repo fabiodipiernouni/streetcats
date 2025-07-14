@@ -1,8 +1,14 @@
 using System;
+using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using StreetCats.Client.Services.Auth.Interfaces;
 using StreetCats.Client.Services.Interfaces;
+using StreetCats.Client.Services.Configuration.Interfaces;
+
+namespace StreetCats.Client.Services.Auth.Implementations;
 
 public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
 {

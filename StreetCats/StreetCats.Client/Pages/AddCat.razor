@@ -1,11 +1,14 @@
 @page "/add-cat"
+@using StreetCats.Client.Services.Auth.Interfaces
+@using StreetCats.Client.Services.Interfaces
+@using StreetCats.Client.Components.Common
+@using System.ComponentModel.DataAnnotations
+
 @inject ICatService CatService
 @inject IAuthService AuthService
 @inject IMapService MapService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@using StreetCats.Client.Components.Common
-@using System.ComponentModel.DataAnnotations
 
 <PageTitle>➕ Segnala Gatto - STREETCATS</PageTitle>
 

@@ -1,3 +1,12 @@
+using StreetCats.Client.Models.Api;
+using StreetCats.Client.Services.Auth.Interfaces;
+using StreetCats.Client.Services.Configuration.Interfaces;
+using StreetCats.Client.Services.Auth.Implementations;
+using StreetCats.Client.Services.Http.Handler;
+
+
+namespace StreetCats.Services.Http.Extensions;
+
 /// <summary>
 /// Estensioni per la registrazione nel DI container
 /// </summary>

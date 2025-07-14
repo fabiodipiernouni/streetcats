@@ -7,8 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using StreetCats.Client.Services.Auth.Interfaces;
 
-namespace StreetCats.Client.Services.Implementation;
+namespace StreetCats.Client.Services.Auth.Implementations;
 
 /// <summary>
 /// Implementazione mock del servizio di autenticazione

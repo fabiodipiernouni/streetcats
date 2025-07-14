@@ -1,11 +1,14 @@
-using StreetCats.Client.Models;
-using StreetCats.Client.Models.DTOs;
-using StreetCats.Client.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using StreetCats.Client.Models;
+using StreetCats.Client.Models.DTOs;
+using StreetCats.Client.Services.Interfaces;
+using StreetCats.Client.Services.Auth.Interfaces;
+using StreetCats.Client.Services.Exceptions.Interfaces;
+using StreetCats.Client.Services.Configuration.Interfaces;
 
-namespace StreetCats.Client.Services.Implementation;
+namespace StreetCats.Client.Services.Implementations;
 
 /// <summary>
 /// Implementazione MOCK del servizio gatti per sviluppo
