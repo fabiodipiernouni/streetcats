@@ -1,5 +1,4 @@
 using System.Threading;
-using StreetCats.Client.Services.Configuration;
 using StreetCats.Client.Services.Interfaces;
 using System.Net.Http.Headers;
 using System.Text;

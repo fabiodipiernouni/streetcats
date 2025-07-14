@@ -1,6 +1,5 @@
 using StreetCats.Client.Models;
 using StreetCats.Client.Models.DTOs;
-using StreetCats.Client.Services.Configuration;
 using StreetCats.Client.Services.Http;
 using StreetCats.Client.Services.Interfaces;
 using System;

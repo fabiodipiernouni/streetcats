@@ -1,4 +1,4 @@
-using StreetCats.Client.Services.Configuration;
+using StreetCats.Client.Services.Implementation;
 using System;
 using System.Diagnostics;
 using System.Linq;

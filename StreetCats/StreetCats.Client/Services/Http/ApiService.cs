@@ -1,5 +1,5 @@
 using StreetCats.Client.Models.DTOs;
-using StreetCats.Client.Services.Configuration;
+using StreetCats.Client.Services.Implementation;
 using StreetCats.Client.Services.Exceptions;
 using System;
 using System.Collections.Generic;

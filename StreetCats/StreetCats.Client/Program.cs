@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using StreetCats.Client;
 using StreetCats.Client.Services.Interfaces;
 using StreetCats.Client.Services.Implementation;
-using StreetCats.Client.Services.Configuration;
 using StreetCats.Client.Services.Http;
 using StreetCats.Client.Services.Exceptions;
 

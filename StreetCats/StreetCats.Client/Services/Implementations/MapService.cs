@@ -1,6 +1,5 @@
 using Microsoft.JSInterop;
 using StreetCats.Client.Models;
-using StreetCats.Client.Services.Configuration;
 using StreetCats.Client.Services.Interfaces;
 using System.Text.Json;
 
