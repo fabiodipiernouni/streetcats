@@ -7,7 +7,7 @@ namespace StreetCats.Client.Services.Implementation;
 
 /// <summary>
 /// Implementazione REALE del servizio mappe (da implementare)
-/// Userà API reali come Google Maps, OpenStreetMap, etc.
+/// Userà API reali
 /// </summary>
 public class MapService
 {
