@@ -1,23 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    
-    <!-- Configurazione Tailwind MSBuild -->
-    <TailwindInputFile>../wwwroot/css/input.css</TailwindInputFile>
-    <TailwindOutputFile>../wwwroot/css/app.css</TailwindOutputFile>
-    <TailwindConfigFile>../tailwind.config.js</TailwindConfigFile>
-    <TailwindMinify>false</TailwindMinify>  <!-- PARAMETRO MANCANTE -->
-    <TailwindWatch>true</TailwindWatch>      <!-- Per development -->
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.7" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" PrivateAssets="all" />
-    <PackageReference Include="Tailwind.MSBuild" Version="1.1.0" />
-  </ItemGroup>
+		<!-- Configurazione Tailwind MSBuild -->
+		<TailwindInputFile>../wwwroot/css/input.css</TailwindInputFile>
+		<TailwindOutputFile>../wwwroot/css/app.css</TailwindOutputFile>
+		<TailwindConfigFile>../tailwind.config.js</TailwindConfigFile>
+		<TailwindMinify>false</TailwindMinify>
+		<TailwindWatch>true</TailwindWatch>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- 🔥 BLAZOR CORE (già presenti) -->
+		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" PrivateAssets="all" />
+
+		<!-- 🌐 HTTP CLIENT E DELEGATING HANDLERS -->
+		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+
+		<!-- ⚙️ CONFIGURATION E OPTIONS PATTERN -->
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
+
+		<!-- 📋 VALIDAZIONE MODELLI -->
+		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+
+		<!-- 📊 LOGGING AVANZATO -->
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
+
+		<!-- 🔧 JSON E HTTP -->
+		<PackageReference Include="System.Net.Http.Json" Version="9.0.0" />
+		<PackageReference Include="System.Text.Json" Version="9.0.0" />
+
+		<!-- 🎨 CSS (già presente) -->
+		<PackageReference Include="Tailwind.MSBuild" Version="1.1.0" />
+	</ItemGroup>
 
 </Project>

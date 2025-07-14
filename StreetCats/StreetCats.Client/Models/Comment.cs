@@ -4,7 +4,8 @@ using System.ComponentModel.DataAnnotations;
 namespace StreetCats.Client.Models;
 
 /// <summary>
-/// Modello per i commenti sui gatti
+/// Modello per commenti sui gatti
+/// Versione aggiornata per compatibilit√† con API REST
 /// </summary>
 public class Comment
 {
@@ -14,30 +15,48 @@ public class Comment
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
-    /// ID del gatto a cui si riferisce il commento
+    /// ID del gatto a cui appartiene il commento
     /// </summary>
+    [Required]
     public Guid CatId { get; set; }
 
     /// <summary>
     /// ID dell'utente che ha scritto il commento
     /// </summary>
+    [Required]
     public Guid UserId { get; set; }
 
     /// <summary>
-    /// Nome dell'utente (per display)
+    /// Nome dell'utente che ha scritto il commento (per display)
     /// </summary>
-    [Required(ErrorMessage = "Il nome utente Ë obbligatorio")]
+    [Required]
+    [StringLength(50)]
     public string UserName { get; set; } = string.Empty;
 
     /// <summary>
     /// Testo del commento
     /// </summary>
-    [Required(ErrorMessage = "Il testo del commento Ë obbligatorio")]
-    [StringLength(1000, ErrorMessage = "Il commento non puÚ superare 1000 caratteri")]
+    [Required]
+    [StringLength(500, ErrorMessage = "Il commento non pu√≤ superare 500 caratteri")]
     public string Text { get; set; } = string.Empty;
 
     /// <summary>
     /// Data di creazione del commento
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Data di ultima modifica del commento (se supportata)
+    /// </summary>
+    public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Indica se il commento √® stato moderato/approvato
+    /// </summary>
+    public bool IsApproved { get; set; } = true;
+
+    /// <summary>
+    /// ID del moderatore che ha approvato il commento (se applicabile)
+    /// </summary>
+    public Guid? ApprovedBy { get; set; }
 }
