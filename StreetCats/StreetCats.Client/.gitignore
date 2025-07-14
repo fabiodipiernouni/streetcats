@@ -30,6 +30,8 @@ artifacts/
 
 # ASP.NET / Blazor specific
 wwwroot/
+wwwroot/lib
+wwwroot/lib/*
 node_modules/
 dist/
 bundle/
