@@ -57,8 +57,6 @@ public class MapServiceMock : IMapService
                 PostalCode = "80100"
             };
         }
-
-        return null;
     }
 
     /// <summary>

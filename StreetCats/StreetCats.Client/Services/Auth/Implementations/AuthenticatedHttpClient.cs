@@ -57,7 +57,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
 
     public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
-        await EnsureAuthenticationAsync();
+        EnsureAuthentication();
         return await _httpClient.SendAsync(request, cancellationToken);
     }
 
@@ -127,7 +127,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
         var request = new HttpRequestMessage(method, requestUri) { Content = content };
 
         // Primo tentativo con token corrente
-        await EnsureAuthenticationAsync();
+        EnsureAuthentication();
         var response = await _httpClient.SendAsync(request, cancellationToken);
 
         // Se non è 401, ritorna la risposta
@@ -145,7 +145,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
 
             // Clona e riprova la richiesta con nuovo token
             var retryRequest = await CloneRequestAsync(request);
-            await EnsureAuthenticationAsync();
+            EnsureAuthentication();
             response = await _httpClient.SendAsync(retryRequest, cancellationToken);
         }
         else
@@ -159,7 +159,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
     /// <summary>
     /// Assicura che le richieste abbiano il token di autenticazione
     /// </summary>
-    private async Task EnsureAuthenticationAsync()
+    private void EnsureAuthentication()
     {
         if (!_authService.IsAuthenticated)
         {

@@ -21,7 +21,7 @@ public class ApiExceptionHandler : IApiExceptionHandler
     /// <summary>
     /// Gestisce eccezioni generiche e le converte in ApiResponse
     /// </summary>
-    public async Task<ApiResponse<T>> HandleExceptionAsync<T>(Exception exception, string operation = "")
+    public ApiResponse<T> HandleException<T>(Exception exception, string operation = "")
     {
         var context = string.IsNullOrEmpty(operation) ? "Operazione API" : operation;
 
@@ -30,7 +30,7 @@ public class ApiExceptionHandler : IApiExceptionHandler
 
         return exception switch
         {
-            HttpRequestException httpEx => await HandleHttpRequestExceptionAsync<T>(httpEx, context),
+            HttpRequestException httpEx => HandleHttpRequestException<T>(httpEx, context),
             TaskCanceledException timeoutEx => HandleTimeoutException<T>(timeoutEx, context),
             JsonException jsonEx => HandleJsonException<T>(jsonEx, context),
             UnauthorizedAccessException authEx => HandleAuthException<T>(authEx, context),
@@ -138,7 +138,7 @@ public class ApiExceptionHandler : IApiExceptionHandler
     /// <summary>
     /// Gestisce HttpRequestException specifiche
     /// </summary>
-    private async Task<ApiResponse<T>> HandleHttpRequestExceptionAsync<T>(HttpRequestException httpEx, string context)
+    private ApiResponse<T> HandleHttpRequestException<T>(HttpRequestException httpEx, string context)
     {
         // Analizza il messaggio per determinare il tipo di errore
         var message = httpEx.Message.ToLower();

@@ -144,7 +144,7 @@ public class AuthService : ApiService, IAuthService
         catch (Exception ex)
         {
             Logger?.LogError(ex, "❌ Errore durante login per utente: {Username}", request.Username);
-            return await ExceptionHandler.HandleExceptionAsync<AuthResponse>(ex, "Login");
+            return ExceptionHandler.HandleException<AuthResponse>(ex, "Login");
         }
     }
 
@@ -185,7 +185,7 @@ public class AuthService : ApiService, IAuthService
         catch (Exception ex)
         {
             Logger?.LogError(ex, "❌ Errore durante registrazione per utente: {Username}", request.Username);
-            return await ExceptionHandler.HandleExceptionAsync<AuthResponse>(ex, "Register");
+            return ExceptionHandler.HandleException<AuthResponse>(ex, "Register");
         }
     }
 

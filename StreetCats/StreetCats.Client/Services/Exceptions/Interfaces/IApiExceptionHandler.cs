@@ -15,7 +15,7 @@ public interface IApiExceptionHandler
     /// <summary>
     /// Gestisce un'eccezione HTTP e restituisce una ApiResponse appropriata
     /// </summary>
-    Task<ApiResponse<T>> HandleExceptionAsync<T>(Exception exception, string operation = "");
+    ApiResponse<T> HandleException<T>(Exception exception, string operation = "");
 
     /// <summary>
     /// Gestisce una HttpResponseMessage di errore

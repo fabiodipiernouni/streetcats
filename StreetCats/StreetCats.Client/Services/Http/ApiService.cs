@@ -57,7 +57,7 @@ public abstract class ApiService
         catch (Exception ex)
         {
             Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
-            return await ExceptionHandler.HandleExceptionAsync<T>(ex, operationName);
+            return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
 
@@ -110,7 +110,7 @@ public abstract class ApiService
         catch (Exception ex)
         {
             Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
-            return await ExceptionHandler.HandleExceptionAsync<T>(ex, operationName);
+            return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
 
@@ -131,7 +131,7 @@ public abstract class ApiService
         catch (Exception ex)
         {
             Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
-            return await ExceptionHandler.HandleExceptionAsync<T>(ex, operationName);
+            return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
 
@@ -156,7 +156,7 @@ public abstract class ApiService
         catch (Exception ex)
         {
             Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
-            return await ExceptionHandler.HandleExceptionAsync<T>(ex, operationName);
+            return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
 
@@ -181,7 +181,7 @@ public abstract class ApiService
         catch (Exception ex)
         {
             Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
-            return await ExceptionHandler.HandleExceptionAsync<T>(ex, operationName);
+            return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
 
@@ -286,7 +286,7 @@ public abstract class ApiService
         catch (Exception ex)
         {
             Logger?.LogError(ex, "❌ Errore processing risposta per {Operation}", operation);
-            return await ExceptionHandler.HandleExceptionAsync<T>(ex, operation);
+            return ExceptionHandler.HandleException<T>(ex, operation);
         }
     }
 

@@ -338,7 +338,7 @@
     }
 
     [JSInvokable]
-    public async Task SelectCat(string catId)
+    public void SelectCat(string catId)
     {
         try
         {
@@ -346,6 +346,10 @@
             {
                 selectedCat = filteredCats.FirstOrDefault(c => c.Id == guid);
                 StateHasChanged();
+            }
+            else
+            {
+                Console.WriteLine($"Errore selezione gatto {catId}.");
             }
         }
         catch (Exception ex)

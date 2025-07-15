@@ -155,7 +155,7 @@
             {
                 isOnline = true;
                 lastErrorMessage = "";
-                await ShowStatus("Connessione ripristinata!", true);
+                ShowStatus("Connessione ripristinata!", true);
                 await OnConnectionChanged.InvokeAsync(true);
             }
         });
@@ -173,7 +173,7 @@
             {
                 isOnline = false;
                 lastErrorMessage = "Connessione Internet non disponibile";
-                await ShowStatus("Connessione persa", false);
+                ShowStatus("Connessione persa", false);
                 await OnConnectionChanged.InvokeAsync(false);
             }
         });
@@ -234,7 +234,7 @@
                     lastErrorMessage = "";
                     if (showUI)
                     {
-                        await ShowStatus("Connessione ripristinata!", true);
+                        ShowStatus("Connessione ripristinata!", true);
                     }
                     await OnConnectionChanged.InvokeAsync(true);
                 }
@@ -252,7 +252,7 @@
                 lastErrorMessage = $"Test connessione fallito: {ex.Message}";
                 if (showUI)
                 {
-                    await ShowStatus("Problemi di connessione", false);
+                    ShowStatus("Problemi di connessione", false);
                 }
                 await OnConnectionChanged.InvokeAsync(false);
             }
@@ -270,7 +270,7 @@
     /// <summary>
     /// Mostra l'indicatore di stato
     /// </summary>
-    private async Task ShowStatus(string message, bool isSuccess)
+    private void ShowStatus(string message, bool isSuccess)
     {
         showIndicator = true;
         StateHasChanged();

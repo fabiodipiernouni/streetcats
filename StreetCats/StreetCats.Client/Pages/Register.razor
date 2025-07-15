@@ -163,11 +163,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Se già autenticato, reindirizza alla home
-        if (AuthService.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/");
-        }
+        await Task.Run(() => {
+            // Se già autenticato, reindirizza alla home
+            if (AuthService.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/");
+            }
+        });
     }
 
     private async Task HandleRegister()
