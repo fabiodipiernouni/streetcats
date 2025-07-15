@@ -1,0 +1,305 @@
+@using System.IO
+@inject IJSRuntime JSRuntime
+
+<div class="space-y-4">
+    <!-- Upload Area -->
+    <div class="@GetUploadAreaClass()" @onclick="TriggerFileInput">
+        @if (!string.IsNullOrEmpty(PreviewUrl))
+        {
+            <!-- Preview Mode -->
+            <div class="relative">
+                <img src="@PreviewUrl" alt="Anteprima foto gatto" 
+                     class="w-full h-48 object-cover rounded-lg" />
+                <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-colors rounded-lg flex items-center justify-center">
+                    <div class="opacity-0 hover:opacity-100 transition-opacity">
+                        <div class="bg-white rounded-full p-2 shadow-lg">
+                            <span class="text-2xl">📷</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Remove Button -->
+                <button type="button" @onclick="RemovePhoto" @onclick:stopPropagation="true"
+                        class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm shadow-lg transition-colors">
+                    ×
+                </button>
+            </div>
+        }
+        else
+        {
+            <!-- Upload Prompt -->
+            <div class="text-center py-8">
+                @if (IsUploading)
+                {
+                    <div class="space-y-3">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-streetcats-orange mx-auto"></div>
+                        <p class="text-gray-600">Caricamento foto...</p>
+                        @if (UploadProgress > 0)
+                        {
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-streetcats-orange h-2 rounded-full transition-all duration-300" 
+                                     style="width: @(UploadProgress)%"></div>
+                            </div>
+                            <p class="text-sm text-gray-500">@(UploadProgress)%</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="space-y-3">
+                        <div class="text-6xl">📷</div>
+                        <div>
+                            <p class="text-lg font-medium text-gray-700">Clicca per aggiungere una foto</p>
+                            <p class="text-sm text-gray-500 mt-1">o trascina qui il file</p>
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            <p>Formati supportati: JPG, PNG, WebP</p>
+                            <p>Dimensione massima: @(MaxFileSizeMB) MB</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Hidden File Input -->
+    <InputFile @ref="fileInput" 
+               OnChange="OnFileSelected" 
+               accept="image/*" 
+               style="display: none;" />
+
+    <!-- Error Messages -->
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div class="flex items-center space-x-2">
+                <span class="text-red-500">⚠️</span>
+                <span class="text-sm text-red-700">@ErrorMessage</span>
+            </div>
+        </div>
+    }
+
+    <!-- File Info -->
+    @if (SelectedFile != null && string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="text-green-500">✅</span>
+                    <div class="text-sm">
+                        <p class="font-medium text-green-800">@SelectedFile.Name</p>
+                        <p class="text-green-600">@FormatFileSize(SelectedFile.Size)</p>
+                    </div>
+                </div>
+                <button type="button" @onclick="RemovePhoto"
+                        class="text-green-600 hover:text-green-800 text-sm font-medium">
+                    Rimuovi
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? PhotoUrl { get; set; }
+    [Parameter] public EventCallback<string?> PhotoUrlChanged { get; set; }
+    [Parameter] public int MaxFileSizeMB { get; set; } = 5;
+    [Parameter] public string[] AllowedExtensions { get; set; } = { ".jpg", ".jpeg", ".png", ".webp" };
+
+    private InputFile? fileInput;
+    private IBrowserFile? SelectedFile;
+    private string? PreviewUrl;
+    private bool IsUploading = false;
+    private int UploadProgress = 0;
+    private string? ErrorMessage;
+
+    protected override void OnInitialized()
+    {
+        // Se c'è già una foto URL, usala come preview
+        if (!string.IsNullOrEmpty(PhotoUrl))
+        {
+            PreviewUrl = PhotoUrl;
+        }
+    }
+
+    /// <summary>
+    /// Trigger del file input nascosto
+    /// </summary>
+    private async Task TriggerFileInput()
+    {
+        if (!IsUploading && fileInput != null)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $"document.querySelector('input[type=file]').click()");
+        }
+    }
+
+    /// <summary>
+    /// Gestisce la selezione del file
+    /// </summary>
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        ErrorMessage = null;
+        
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+
+            // Validazione file
+            if (!ValidateFile(file))
+            {
+                return;
+            }
+
+            SelectedFile = file;
+            IsUploading = true;
+            UploadProgress = 0;
+            StateHasChanged();
+
+            // Simula progress upload
+            await SimulateUploadProgress();
+
+            // Genera preview
+            PreviewUrl = await GeneratePreview(file);
+            
+            // Converte in base64 per storage (modalità mock)
+            var photoUrl = await ConvertToBase64(file);
+            
+            // Notifica parent component
+            await PhotoUrlChanged.InvokeAsync(photoUrl);
+
+            IsUploading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Errore durante il caricamento: {ex.Message}";
+            IsUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Valida il file selezionato
+    /// </summary>
+    private bool ValidateFile(IBrowserFile file)
+    {
+        // Controlla dimensione
+        var maxSizeBytes = MaxFileSizeMB * 1024 * 1024;
+        if (file.Size > maxSizeBytes)
+        {
+            ErrorMessage = $"Il file è troppo grande. Massimo {MaxFileSizeMB} MB consentiti.";
+            return false;
+        }
+
+        // Controlla estensione
+        var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (!AllowedExtensions.Contains(extension))
+        {
+            ErrorMessage = $"Formato file non supportato. Consentiti: {string.Join(", ", AllowedExtensions)}";
+            return false;
+        }
+
+        // Controlla tipo MIME
+        if (!file.ContentType.StartsWith("image/"))
+        {
+            ErrorMessage = "Il file selezionato non è un'immagine valida.";
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Genera preview dell'immagine
+    /// </summary>
+    private async Task<string> GeneratePreview(IBrowserFile file)
+    {
+        try
+        {
+            // Ridimensiona per preview (max 800x600)
+            var resizedFile = await file.RequestImageFileAsync("image/jpeg", 800, 600);
+            
+            using var stream = resizedFile.OpenReadStream(maxAllowedSize: MaxFileSizeMB * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            
+            var base64 = Convert.ToBase64String(memoryStream.ToArray());
+            return $"data:{resizedFile.ContentType};base64,{base64}";
+        }
+        catch
+        {
+            // Fallback se il resize fallisce
+            return await ConvertToBase64(file);
+        }
+    }
+
+    /// <summary>
+    /// Converte file in base64 per storage
+    /// </summary>
+    private async Task<string> ConvertToBase64(IBrowserFile file)
+    {
+        using var stream = file.OpenReadStream(maxAllowedSize: MaxFileSizeMB * 1024 * 1024);
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        
+        var base64 = Convert.ToBase64String(memoryStream.ToArray());
+        return $"data:{file.ContentType};base64,{base64}";
+    }
+
+    /// <summary>
+    /// Simula progress di upload per UX
+    /// </summary>
+    private async Task SimulateUploadProgress()
+    {
+        for (int i = 10; i <= 100; i += 10)
+        {
+            UploadProgress = i;
+            StateHasChanged();
+            await Task.Delay(100);
+        }
+    }
+
+    /// <summary>
+    /// Rimuove la foto selezionata
+    /// </summary>
+    private async Task RemovePhoto()
+    {
+        SelectedFile = null;
+        PreviewUrl = null;
+        ErrorMessage = null;
+        UploadProgress = 0;
+        
+        await PhotoUrlChanged.InvokeAsync(null);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Ottiene le classi CSS per l'area di upload
+    /// </summary>
+    private string GetUploadAreaClass()
+    {
+        var baseClass = "border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200";
+        
+        if (!string.IsNullOrEmpty(PreviewUrl))
+        {
+            return $"{baseClass} border-green-300 bg-green-50";
+        }
+        
+        if (IsUploading)
+        {
+            return $"{baseClass} border-streetcats-orange bg-orange-50";
+        }
+        
+        return $"{baseClass} border-gray-300 hover:border-streetcats-orange hover:bg-orange-50";
+    }
+
+    /// <summary>
+    /// Formatta la dimensione del file
+    /// </summary>
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024:F1} KB";
+        return $"{bytes / (1024 * 1024):F1} MB";
+    }
+}

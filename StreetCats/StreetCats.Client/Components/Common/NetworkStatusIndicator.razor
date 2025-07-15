@@ -1,0 +1,371 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+
+<!-- Network Status Indicator -->
+@if (showIndicator)
+{
+    <div class="@GetContainerClass()">
+        <div class="flex items-center space-x-3">
+            <!-- Status Icon -->
+            <div class="@GetIconClass()">
+                @if (isOnline)
+                {
+                    @if (isConnecting)
+                    {
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    }
+                    else
+                    {
+                        <span>🟢</span>
+                    }
+                }
+                else
+                {
+                    <span>🔴</span>
+                }
+            </div>
+
+            <!-- Status Message -->
+            <div class="flex-1">
+                <p class="@GetTextClass() font-medium text-sm">
+                    @GetStatusMessage()
+                </p>
+                @if (!string.IsNullOrEmpty(lastErrorMessage))
+                {
+                    <p class="text-xs opacity-75 mt-1">
+                        @lastErrorMessage
+                    </p>
+                }
+            </div>
+
+            <!-- Retry Button -->
+            @if (!isOnline && showRetryButton)
+            {
+                <button @onclick="() => TestConnection()" 
+                        disabled="@isConnecting"
+                        class="bg-white bg-opacity-20 hover:bg-opacity-30 disabled:bg-opacity-10 text-white px-3 py-1 rounded text-xs transition-colors">
+                    @if (isConnecting)
+                    {
+                        <span>Test...</span>
+                    }
+                    else
+                    {
+                        <span>🔄 Riprova</span>
+                    }
+                </button>
+            }
+
+            <!-- Dismiss Button -->
+            @if (isDismissible)
+            {
+                <button @onclick="Dismiss" 
+                        class="text-white hover:text-gray-200 ml-2">
+                    <span class="text-lg">×</span>
+                </button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool AutoHide { get; set; } = true;
+    [Parameter] public int AutoHideDelayMs { get; set; } = 5000;
+    [Parameter] public bool ShowRetryButton { get; set; } = true;
+    [Parameter] public bool IsDismissible { get; set; } = true;
+    [Parameter] public EventCallback<bool> OnConnectionChanged { get; set; }
+
+    private bool isOnline = true;
+    private bool showIndicator = false;
+    private bool isConnecting = false;
+    private bool showRetryButton = true;
+    private bool isDismissible = true;
+    private string lastErrorMessage = "";
+    private Timer? autoHideTimer;
+    private Timer? connectionCheckTimer;
+    private DateTime lastConnectionCheck = DateTime.UtcNow;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Controlla stato iniziale della connessione
+            isOnline = await CheckBrowserOnlineStatus();
+            
+            // Avvia monitoraggio periodico della connessione
+            StartConnectionMonitoring();
+            
+            // Setup event listeners per eventi di rete
+            await SetupNetworkEventListeners();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore inizializzazione NetworkStatusIndicator: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Verifica lo stato online del browser
+    /// </summary>
+    private async Task<bool> CheckBrowserOnlineStatus()
+    {
+        try
+        {
+            var browserInfo = await JSRuntime.InvokeAsync<dynamic>("StreetCatsInterop.getBrowserInfo");
+            return browserInfo?.onLine ?? true;
+        }
+        catch
+        {
+            return true; // Assume online se non riesce a controllare
+        }
+    }
+
+    /// <summary>
+    /// Imposta listener per eventi di rete del browser
+    /// </summary>
+    private async Task SetupNetworkEventListeners()
+    {
+        try
+        {
+            // Registra callback per eventi online/offline
+            var dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                window.addEventListener('online', () => {{
+                    DotNet.invokeMethodAsync('StreetCats.Client', 'OnBrowserOnline', '{dotNetRef.Value}');
+                }});
+                window.addEventListener('offline', () => {{
+                    DotNet.invokeMethodAsync('StreetCats.Client', 'OnBrowserOffline', '{dotNetRef.Value}');
+                }});
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore setup network listeners: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Callback per evento browser online
+    /// </summary>
+    [JSInvokable]
+    public async Task OnBrowserOnline()
+    {
+        await InvokeAsync(async () =>
+        {
+            if (!isOnline)
+            {
+                isOnline = true;
+                lastErrorMessage = "";
+                ShowStatus("Connessione ripristinata!", true);
+                await OnConnectionChanged.InvokeAsync(true);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Callback per evento browser offline
+    /// </summary>
+    [JSInvokable]
+    public async Task OnBrowserOffline()
+    {
+        await InvokeAsync(async () =>
+        {
+            if (isOnline)
+            {
+                isOnline = false;
+                lastErrorMessage = "Connessione Internet non disponibile";
+                ShowStatus("Connessione persa", false);
+                await OnConnectionChanged.InvokeAsync(false);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Avvia monitoraggio periodico della connessione
+    /// </summary>
+    private void StartConnectionMonitoring()
+    {
+        connectionCheckTimer = new Timer(async _ => 
+        {
+            try
+            {
+                await InvokeAsync(async () =>
+                {
+                    // Controlla ogni 30 secondi
+                    if (DateTime.UtcNow - lastConnectionCheck > TimeSpan.FromSeconds(30))
+                    {
+                        await TestConnection(false);
+                        lastConnectionCheck = DateTime.UtcNow;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Errore monitoring connessione: {ex.Message}");
+            }
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    /// <summary>
+    /// Testa la connessione effettuando una richiesta di test
+    /// </summary>
+    private async Task TestConnection(bool showUI = true)
+    {
+        if (isConnecting) return;
+
+        try
+        {
+            if (showUI)
+            {
+                isConnecting = true;
+                StateHasChanged();
+            }
+
+            // Test semplice: prova a fare una richiesta HEAD a un servizio affidabile
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(10);
+            
+            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, "https://www.google.com"));
+            
+            if (response.IsSuccessStatusCode)
+            {
+                if (!isOnline)
+                {
+                    isOnline = true;
+                    lastErrorMessage = "";
+                    if (showUI)
+                    {
+                        ShowStatus("Connessione ripristinata!", true);
+                    }
+                    await OnConnectionChanged.InvokeAsync(true);
+                }
+            }
+            else
+            {
+                throw new Exception($"HTTP {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (isOnline)
+            {
+                isOnline = false;
+                lastErrorMessage = $"Test connessione fallito: {ex.Message}";
+                if (showUI)
+                {
+                    ShowStatus("Problemi di connessione", false);
+                }
+                await OnConnectionChanged.InvokeAsync(false);
+            }
+        }
+        finally
+        {
+            if (showUI)
+            {
+                isConnecting = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Mostra l'indicatore di stato
+    /// </summary>
+    private void ShowStatus(string message, bool isSuccess)
+    {
+        showIndicator = true;
+        StateHasChanged();
+
+        // Auto-hide se configurato e la connessione è ok
+        if (AutoHide && isSuccess)
+        {
+            autoHideTimer?.Dispose();
+            autoHideTimer = new Timer(_ => 
+            {
+                InvokeAsync(() =>
+                {
+                    showIndicator = false;
+                    StateHasChanged();
+                });
+            }, null, AutoHideDelayMs, Timeout.Infinite);
+        }
+    }
+
+    /// <summary>
+    /// Nasconde manualmente l'indicatore
+    /// </summary>
+    private void Dismiss()
+    {
+        showIndicator = false;
+        autoHideTimer?.Dispose();
+    }
+
+    /// <summary>
+    /// Ottiene il messaggio di stato appropriato
+    /// </summary>
+    private string GetStatusMessage()
+    {
+        if (isConnecting)
+        {
+            return "Verifica connessione...";
+        }
+        
+        if (isOnline)
+        {
+            return "Connesso";
+        }
+        
+        return "Disconnesso";
+    }
+
+    /// <summary>
+    /// Ottiene le classi CSS per il container
+    /// </summary>
+    private string GetContainerClass()
+    {
+        var baseClass = "fixed top-4 right-4 z-50 max-w-sm rounded-lg shadow-lg p-3 transition-all duration-300 transform";
+        
+        if (isOnline)
+        {
+            return $"{baseClass} bg-green-500 text-white";
+        }
+        else
+        {
+            return $"{baseClass} bg-red-500 text-white";
+        }
+    }
+
+    /// <summary>
+    /// Ottiene le classi CSS per l'icona
+    /// </summary>
+    private string GetIconClass()
+    {
+        return "flex items-center justify-center w-6 h-6";
+    }
+
+    /// <summary>
+    /// Ottiene le classi CSS per il testo
+    /// </summary>
+    private string GetTextClass()
+    {
+        return "text-white";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        autoHideTimer?.Dispose();
+        connectionCheckTimer?.Dispose();
+        
+        try
+        {
+            // Rimuovi event listeners
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.removeEventListener('online', window.onlineHandler);
+                window.removeEventListener('offline', window.offlineHandler);
+            ");
+        }
+        catch
+        {
+            // Ignora errori durante dispose
+        }
+    }
+}

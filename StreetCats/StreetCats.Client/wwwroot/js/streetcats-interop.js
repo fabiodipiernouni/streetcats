@@ -413,7 +413,7 @@ window.StreetCatsInterop = {
 
                 // Chiama il callback C# se configurato
                 if (self.markerClickCallback) {
-                    self.markerClickCallback.invokeMethodAsync('SelectCat', catId);
+                    self.markerClickCallback.invokeMethod('SelectCat', catId);
                 }
 
                 // Impedisci che il click si propaghi alla mappa

@@ -1,8 +1,10 @@
 @page "/cats"
+@using StreetCats.Client.Services.Auth.Interfaces
+@using StreetCats.Client.Components.Common
+
 @inject ICatService CatService
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
-@using StreetCats.Client.Components.Common
 
 <PageTitle>🐱 Tutti i Gatti - STREETCATS</PageTitle>
 

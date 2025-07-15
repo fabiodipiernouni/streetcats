@@ -7,22 +7,22 @@ namespace StreetCats.Client.Models.DTOs;
 /// </summary>
 public class RegisterRequest
 {
-    [Required(ErrorMessage = "Il nome utente è obbligatorio")]
-    [StringLength(50, ErrorMessage = "Il nome utente non può superare 50 caratteri")]
+    [Required(ErrorMessage = "Il nome utente Ã¨ obbligatorio")]
+    [StringLength(50, ErrorMessage = "Il nome utente non puÃ² superare 50 caratteri")]
     public string Username { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "L'email è obbligatoria")]
+    [Required(ErrorMessage = "L'email Ã¨ obbligatoria")]
     [EmailAddress(ErrorMessage = "Formato email non valido")]
     public string Email { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "La password è obbligatoria")]
+    [Required(ErrorMessage = "La password Ã¨ obbligatoria")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "La password deve essere tra 6 e 100 caratteri")]
     public string Password { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "La conferma password è obbligatoria")]
+    [Required(ErrorMessage = "La conferma password Ã¨ obbligatoria")]
     [Compare("Password", ErrorMessage = "Le password non coincidono")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    [StringLength(100, ErrorMessage = "Il nome completo non può superare 100 caratteri")]
+    [StringLength(100, ErrorMessage = "Il nome completo non puÃ² superare 100 caratteri")]
     public string FullName { get; set; } = string.Empty;
 }

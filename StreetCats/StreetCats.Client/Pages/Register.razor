@@ -1,8 +1,10 @@
 @page "/register"
-@inject IAuthService AuthService
-@inject NavigationManager Navigation
+@using StreetCats.Client.Services.Auth.Interfaces
 @using StreetCats.Client.Components.Common
 @using System.ComponentModel.DataAnnotations
+
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
 
 <PageTitle>📝 Registrazione - STREETCATS</PageTitle>
 
@@ -161,11 +163,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Se già autenticato, reindirizza alla home
-        if (AuthService.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/");
-        }
+        await Task.Run(() => {
+            // Se già autenticato, reindirizza alla home
+            if (AuthService.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/");
+            }
+        });
     }
 
     private async Task HandleRegister()

@@ -4,7 +4,7 @@ using StreetCats.Client.Services.Interfaces;
 using System;
 using System.Threading.Tasks;
 
-namespace StreetCats.Client.Services.Implementation;
+namespace StreetCats.Client.Services.Implementations;
 
 /// <summary>
 /// Implementazione del servizio per operazioni di geolocalizzazione
@@ -57,8 +57,6 @@ public class MapServiceMock : IMapService
                 PostalCode = "80100"
             };
         }
-
-        return null;
     }
 
     /// <summary>

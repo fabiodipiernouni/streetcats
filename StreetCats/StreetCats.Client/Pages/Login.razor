@@ -1,7 +1,9 @@
 @page "/login"
+@using StreetCats.Client.Services.Auth.Interfaces
+@using StreetCats.Client.Components.Common
+
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
-@using StreetCats.Client.Components.Common
 
 <PageTitle>🔑 Login - STREETCATS</PageTitle>
 
@@ -111,11 +113,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Se già autenticato, reindirizza alla home
-        if (AuthService.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/");
-        }
+        await Task.Run(() => {
+            // Se già autenticato, reindirizza alla home
+            if (AuthService.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/");
+            }
+        });
     }
 
     private async Task HandleLogin()

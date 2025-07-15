@@ -4,7 +4,8 @@ using System.ComponentModel.DataAnnotations;
 namespace StreetCats.Client.Models;
 
 /// <summary>
-/// Modello per gli utenti dell'applicazione
+/// Modello per utenti registrati su STREETCATS
+/// Versione aggiornata per compatibilitÃ  con API REST
 /// </summary>
 public class User
 {
@@ -14,24 +15,25 @@ public class User
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
-    /// Nome utente (username)
+    /// Nome utente unico
     /// </summary>
-    [Required(ErrorMessage = "Il nome utente è obbligatorio")]
-    [StringLength(50, ErrorMessage = "Il nome utente non può superare 50 caratteri")]
+    [Required]
+    [StringLength(30, MinimumLength = 3)]
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
     /// Email dell'utente
     /// </summary>
-    [Required(ErrorMessage = "L'email è obbligatoria")]
-    [EmailAddress(ErrorMessage = "Formato email non valido")]
+    [Required]
+    [EmailAddress]
+    [StringLength(100)]
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// Nome completo dell'utente
+    /// Nome completo dell'utente (opzionale)
     /// </summary>
-    [StringLength(100, ErrorMessage = "Il nome completo non può superare 100 caratteri")]
-    public string FullName { get; set; } = string.Empty;
+    [StringLength(100)]
+    public string? FullName { get; set; }
 
     /// <summary>
     /// Data di registrazione
@@ -39,7 +41,64 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Indica se l'utente è attivo
+    /// Data di ultimo accesso
+    /// </summary>
+    public DateTime? LastLoginAt { get; set; }
+
+    /// <summary>
+    /// Indica se l'utente Ã¨ attivo
     /// </summary>
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Indica se l'email Ã¨ stata verificata
+    /// </summary>
+    public bool IsEmailVerified { get; set; } = false;
+
+    /// <summary>
+    /// Avatar URL (opzionale)
+    /// </summary>
+    public string? AvatarUrl { get; set; }
+
+    /// <summary>
+    /// Biografia dell'utente (opzionale)
+    /// </summary>
+    [StringLength(200)]
+    public string? Bio { get; set; }
+
+    /// <summary>
+    /// Ruolo dell'utente (User, Moderator, Admin)
+    /// </summary>
+    public UserRole Role { get; set; } = UserRole.User;
+
+    /// <summary>
+    /// Numero di gatti segnalati dall'utente
+    /// </summary>
+    public int CatsReported { get; set; } = 0;
+
+    /// <summary>
+    /// Numero di commenti scritti dall'utente
+    /// </summary>
+    public int CommentsCount { get; set; } = 0;
+}
+
+/// <summary>
+/// Enumerazione per i ruoli utente
+/// </summary>
+public enum UserRole
+{
+    /// <summary>
+    /// Utente normale
+    /// </summary>
+    User,
+
+    /// <summary>
+    /// Moderatore (puÃ² moderare contenuti)
+    /// </summary>
+    Moderator,
+
+    /// <summary>
+    /// Amministratore (accesso completo)
+    /// </summary>
+    Admin
 }
