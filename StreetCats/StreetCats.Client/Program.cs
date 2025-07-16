@@ -87,6 +87,13 @@ if (!useMockServices)
     .AddHttpMessageHandler<RetryDelegatingHandler>()
     .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
+    // HttpClient per MapService (servizi esterni come Nominatim)
+    builder.Services.AddHttpClient("MapService", client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(10);
+        client.DefaultRequestHeaders.Add("User-Agent", "StreetCats-University-Project/1.0 (student@example.com)");
+    });
+
     // AuthenticatedHttpClient per API calls (escluso AuthService)
     builder.Services.AddScoped<IAuthenticatedHttpClient, AuthenticatedHttpClient>();
 
@@ -107,6 +114,8 @@ if (!useMockServices)
 
     // Altri servizi usano AuthenticatedHttpClient
     builder.Services.AddScoped<ICatService, CatService>();
+
+    // MapService usa la sua HttpClient factory
     builder.Services.AddScoped<IMapService, MapService>();
 
     Console.WriteLine("Servizi REALI registrati con successo");

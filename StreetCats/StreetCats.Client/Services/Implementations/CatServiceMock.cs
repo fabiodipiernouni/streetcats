@@ -359,7 +359,7 @@ public class CatServiceMock : ICatService
         {
             Id = Guid.NewGuid(),
             CatId = catId,
-            UserId = _authService.CurrentUser!.Id,
+            UserId = new Guid(_authService.CurrentUser!.Id),
             UserName = _authService.CurrentUser!.Username,
             Text = text,
             CreatedAt = DateTime.UtcNow

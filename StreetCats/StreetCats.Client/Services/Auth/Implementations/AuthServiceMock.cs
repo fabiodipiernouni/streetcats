@@ -70,18 +70,18 @@ public class AuthServiceMock : IAuthService
         await Task.Delay(1000);
 
         // Mock - accetta qualsiasi login per demo
-        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
         {
             return new ApiResponse<AuthResponse>
             {
                 Success = false,
-                Message = "Username e password sono obbligatori",
+                Message = "Email e password sono obbligatori",
                 Errors = new List<string> { "Credenziali mancanti" }
             };
         }
 
         // Simula utenti di test
-        var mockUser = CreateMockUser(request.Username);
+        var mockUser = CreateMockUser(request.Email);
         var mockToken = GenerateMockToken(mockUser);
 
         var authResponse = new AuthResponse
@@ -161,7 +161,7 @@ public class AuthServiceMock : IAuthService
         // Crea nuovo utente
         var newUser = new User
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.NewGuid().ToString(),
             Username = request.Username,
             Email = request.Email,
             FullName = request.FullName,
@@ -227,7 +227,7 @@ public class AuthServiceMock : IAuthService
     {
         return new User
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.NewGuid().ToString(),
             Username = username,
             Email = $"{username}@example.com",
             FullName = $"Utente {username}",

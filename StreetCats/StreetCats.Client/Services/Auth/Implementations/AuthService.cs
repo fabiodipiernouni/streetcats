@@ -125,13 +125,13 @@ public class AuthService : IAuthService
     {
         try
         {
-            _logger?.LogInformation("Tentativo login per utente: {Username}", request.Username);
+            _logger?.LogInformation("Tentativo login per utente: {Email}", request.Email);
 
             // Validazione input
-            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             {
                 return ApiResponse<AuthResponse>.ErrorResponse(
-                    "Username e password sono obbligatori",
+                    "Email e password sono obbligatori",
                     "Credenziali mancanti"
                 );
             }
@@ -148,7 +148,7 @@ public class AuthService : IAuthService
                 _token = response.Data.Token;
                 _currentUser = response.Data.User;
 
-                _logger?.LogInformation("Login riuscito per utente: {Username}", request.Username);
+                _logger?.LogInformation("Login riuscito per utente: {Email}", request.Email);
                 AuthenticationStateChanged?.Invoke(true);
             }
 
@@ -156,7 +156,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Errore durante login per utente: {Username}", request.Username);
+            _logger?.LogError(ex, "Errore durante login per utente: {Email}", request.Email);
             return _exceptionHandler.HandleException<AuthResponse>(ex, "Login");
         }
     }

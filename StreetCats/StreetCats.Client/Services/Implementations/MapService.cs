@@ -22,18 +22,15 @@ public class MapService : IMapService
     private readonly TimeSpan _nominatimDelay = TimeSpan.FromSeconds(1);
 
     public MapService(
-        HttpClient httpClient,
+        IHttpClientFactory httpClientFactory,
         IJSRuntime jsRuntime,
         IAppSettings appSettings,
         ILogger<MapService>? logger = null)
     {
-        _httpClient = httpClient;
+        _httpClient = CreateConfiguredHttpClient(httpClientFactory);
         _jsRuntime = jsRuntime;
         _appSettings = appSettings;
         _logger = logger;
-
-        // Configura HttpClient per Nominatim
-        ConfigureHttpClient();
     }
 
     #region Public API Methods
@@ -161,13 +158,17 @@ public class MapService : IMapService
     #region Private Helper Methods
 
     /// <summary>
-    /// Configura HttpClient per chiamate Nominatim
+    /// Crea un HttpClient configurato per Nominatim usando la factory
     /// </summary>
-    private void ConfigureHttpClient()
+    private HttpClient CreateConfiguredHttpClient(IHttpClientFactory httpClientFactory)
     {
+        var httpClient = httpClientFactory.CreateClient();
+
         // User-Agent obbligatorio per Nominatim
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "StreetCats-University-Project/1.0 (student@example.com)");
-        _httpClient.Timeout = TimeSpan.FromSeconds(10); // Timeout ragionevole per geocoding
+        httpClient.DefaultRequestHeaders.Add("User-Agent", "StreetCats-University-Project/1.0 (student@example.com)");
+        httpClient.Timeout = TimeSpan.FromSeconds(10); // Timeout ragionevole per geocoding
+
+        return httpClient;
     }
 
     /// <summary>

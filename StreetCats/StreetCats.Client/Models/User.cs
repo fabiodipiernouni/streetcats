@@ -1,24 +1,27 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace StreetCats.Client.Models;
 
 /// <summary>
 /// Modello per utenti registrati su STREETCATS
-/// Versione aggiornata per compatibilità con API REST
+/// Versione aggiornata per compatibilità con API REST e schema MongoDB
 /// </summary>
 public class User
 {
     /// <summary>
-    /// ID unico dell'utente
+    /// ID unico dell'utente (MongoDB _id)
     /// </summary>
-    public Guid Id { get; set; } = Guid.NewGuid();
+    [JsonPropertyName("_id")]
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
     /// Nome utente unico
     /// </summary>
     [Required]
-    [StringLength(30, MinimumLength = 3)]
+    [StringLength(50, MinimumLength = 3)]
+    [JsonPropertyName("username")]
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
@@ -26,79 +29,93 @@ public class User
     /// </summary>
     [Required]
     [EmailAddress]
-    [StringLength(100)]
+    [JsonPropertyName("email")]
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// Nome completo dell'utente (opzionale)
+    /// Nome completo dell'utente (OBBLIGATORIO nel backend)
     /// </summary>
+    [Required]
     [StringLength(100)]
-    public string? FullName { get; set; }
+    [JsonPropertyName("fullName")]
+    public string FullName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Data di registrazione
+    /// Ruolo dell'utente (user, admin)
     /// </summary>
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// Data di ultimo accesso
-    /// </summary>
-    public DateTime? LastLoginAt { get; set; }
+    [JsonPropertyName("role")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public UserRole Role { get; set; } = UserRole.User;
 
     /// <summary>
     /// Indica se l'utente è attivo
     /// </summary>
+    [JsonPropertyName("isActive")]
     public bool IsActive { get; set; } = true;
 
     /// <summary>
-    /// Indica se l'email è stata verificata
+    /// Data di creazione (timestamp automatico MongoDB)
     /// </summary>
-    public bool IsEmailVerified { get; set; } = false;
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>
-    /// Avatar URL (opzionale)
+    /// Data di ultimo aggiornamento (timestamp automatico MongoDB)
     /// </summary>
+    [JsonPropertyName("updatedAt")]
+    public DateTime UpdatedAt { get; set; }
+
+    // Campi extra che potrebbero essere utili lato client
+    // ma non sono nel schema MongoDB base
+
+    /// <summary>
+    /// Data di ultimo accesso (campo client-side)
+    /// </summary>
+    [JsonIgnore]
+    public DateTime? LastLoginAt { get; set; }
+
+    /// <summary>
+    /// Avatar URL (campo client-side)
+    /// </summary>
+    [JsonIgnore]
     public string? AvatarUrl { get; set; }
 
     /// <summary>
-    /// Biografia dell'utente (opzionale)
+    /// Biografia dell'utente (campo client-side)
     /// </summary>
+    [JsonIgnore]
     [StringLength(200)]
     public string? Bio { get; set; }
 
     /// <summary>
-    /// Ruolo dell'utente (User, Moderator, Admin)
+    /// Numero di gatti segnalati dall'utente (campo client-side)
     /// </summary>
-    public UserRole Role { get; set; } = UserRole.User;
-
-    /// <summary>
-    /// Numero di gatti segnalati dall'utente
-    /// </summary>
+    [JsonIgnore]
     public int CatsReported { get; set; } = 0;
 
     /// <summary>
-    /// Numero di commenti scritti dall'utente
+    /// Numero di commenti scritti dall'utente (campo client-side)
     /// </summary>
+    [JsonIgnore]
     public int CommentsCount { get; set; } = 0;
 }
 
 /// <summary>
 /// Enumerazione per i ruoli utente
+/// DEVE corrispondere esattamente ai valori nel backend: ['user', 'admin']
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum UserRole
 {
     /// <summary>
     /// Utente normale
     /// </summary>
+    [JsonPropertyName("user")]
     User,
-
-    /// <summary>
-    /// Moderatore (può moderare contenuti)
-    /// </summary>
-    Moderator,
 
     /// <summary>
     /// Amministratore (accesso completo)
     /// </summary>
+    [JsonPropertyName("admin")]
     Admin
 }
