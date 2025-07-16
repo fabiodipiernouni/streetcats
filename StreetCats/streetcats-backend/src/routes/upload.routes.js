@@ -12,6 +12,14 @@ const { authenticate, authorize } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
+// Rotta base per upload
+router.post('/upload', 
+  authenticate,
+  uploadSingle,
+  handleMulterError,
+  uploadCatPhoto
+);
+
 // Upload singola foto gatto (autenticato)
 router.post('/images', 
   authenticate,

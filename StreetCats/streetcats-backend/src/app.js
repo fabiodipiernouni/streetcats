@@ -9,6 +9,7 @@ const config = require('./config/environment');
 const authRoutes = require('./routes/auth.routes');
 const catRoutes = require('./routes/cats.routes');
 const commentRoutes = require('./routes/comments.routes');
+const uploadRoutes = require('./routes/upload.routes');
 const errorHandler = require('./middleware/error.middleware');
 
 const app = express();
@@ -63,6 +64,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/cats', catRoutes);
 app.use('/api', commentRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Serve static files (immagini caricate)
+app.use('/uploads', express.static('uploads'));
 
 // Health check
 app.get('/health', (req, res) => {
