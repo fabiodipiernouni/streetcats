@@ -18,8 +18,8 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// 🔧 CONFIGURAZIONE APPLICAZIONE
-Console.WriteLine("🚀 STREETCATS - Avvio configurazione servizi...");
+// CONFIGURAZIONE APPLICAZIONE
+Console.WriteLine("STREETCATS - Avvio configurazione servizi...");
 
 // Registra configurazione strongly-typed
 builder.Services.AddAppSettings(builder.Configuration);
@@ -29,18 +29,18 @@ var config = builder.Configuration;
 var useMockServices = config.GetValue<bool>("ApiSettings:UseMockServices", true);
 var baseUrl = config.GetValue<string>("ApiSettings:BaseUrl", "https://localhost:3000/api");
 
-Console.WriteLine($"🔧 Modalità: {(useMockServices ? "SVILUPPO (Mock)" : "PRODUZIONE (Real API)")}");
-Console.WriteLine($"🌐 Base URL: {baseUrl}");
+Console.WriteLine($"Modalità: {(useMockServices ? "SVILUPPO (Mock)" : "PRODUZIONE (Real API)")}");
+Console.WriteLine($"Base URL: {baseUrl}");
 
-// 🌐 HTTP CLIENT CONFIGURATION
+// HTTP CLIENT CONFIGURATION
 // HttpClient base per servizi generali
 builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
 });
 
-// 📋 SERVIZI DI SUPPORTO (sempre necessari)
-Console.WriteLine("📋 Registrando servizi di supporto...");
+// SERVIZI DI SUPPORTO (sempre necessari)
+Console.WriteLine("Registrando servizi di supporto...");
 
 // Exception Handler
 builder.Services.AddScoped<IApiExceptionHandler, ApiExceptionHandler>();
@@ -54,8 +54,8 @@ builder.Services.AddScoped<IAuthenticatedHttpClient, AuthenticatedHttpClient>();
 
 if (!useMockServices)
 {
-    // 🏭 CONFIGURAZIONE PER PRODUZIONE - API REALI
-    Console.WriteLine("🏭 Configurando servizi REALI per API REST...");
+    // CONFIGURAZIONE PER PRODUZIONE - API REALI
+    Console.WriteLine("Configurando servizi REALI per API REST...");
 
     // HttpClient configurato per API autenticate
     builder.Services.AddHttpClient("StreetCatsApi", (serviceProvider, client) =>
@@ -74,28 +74,28 @@ if (!useMockServices)
     .AddHttpMessageHandler<RetryDelegatingHandler>()
     .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
-    // 🔐 SERVIZI REALI
+    // SERVIZI REALI
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<ICatService, CatService>();
     builder.Services.AddScoped<IMapService, MapService>();
 
-    Console.WriteLine("✅ Servizi REALI registrati con successo");
+    Console.WriteLine("Servizi REALI registrati con successo");
 }
 else
 {
-    // 🧪 CONFIGURAZIONE PER SVILUPPO - SERVIZI MOCK
-    Console.WriteLine("🧪 Configurando servizi MOCK per sviluppo...");
+    // CONFIGURAZIONE PER SVILUPPO - SERVIZI MOCK
+    Console.WriteLine("Configurando servizi MOCK per sviluppo...");
 
     // Servizi mock per sviluppo e testing
     builder.Services.AddScoped<IAuthService, AuthServiceMock>();
     builder.Services.AddScoped<ICatService, CatServiceMock>();
     builder.Services.AddScoped<IMapService, MapServiceMock>();
 
-    Console.WriteLine("✅ Servizi MOCK registrati per sviluppo");
+    Console.WriteLine("Servizi MOCK registrati per sviluppo");
 }
 
-// 🔐 AUTHORIZATION SERVICES
-Console.WriteLine("🔐 Configurando sistema di autorizzazione...");
+// AUTHORIZATION SERVICES
+Console.WriteLine("Configurando sistema di autorizzazione...");
 
 // TODO: Quando implementerai CustomAuthenticationStateProvider, decommenta questa sezione
 /*
@@ -105,8 +105,8 @@ builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
 builder.Services.AddAuthorizationCore();
 */
 
-// 📊 LOGGING CONFIGURATION
-Console.WriteLine("📊 Configurando logging...");
+// LOGGING CONFIGURATION
+Console.WriteLine("Configurando logging...");
 
 builder.Services.AddLogging(logging =>
 {
@@ -119,12 +119,12 @@ builder.Services.AddLogging(logging =>
     }
 });
 
-// 🚀 BUILD E AVVIO
-Console.WriteLine("🚀 Building applicazione...");
+// BUILD E AVVIO
+Console.WriteLine("Building applicazione...");
 
 var app = builder.Build();
 
-// 🔍 VERIFICA CONFIGURAZIONE
+// VERIFICA CONFIGURAZIONE
 try
 {
     var appSettings = app.Services.GetRequiredService<IAppSettings>();
@@ -132,7 +132,7 @@ try
 
     if (!validationResult.IsValid)
     {
-        Console.WriteLine("❌ ERRORI CONFIGURAZIONE:");
+        Console.WriteLine("ERRORI CONFIGURAZIONE:");
         foreach (var error in validationResult.Errors)
         {
             Console.WriteLine($"   • {error}");
@@ -140,23 +140,23 @@ try
         throw new InvalidOperationException("Configurazione non valida");
     }
 
-    Console.WriteLine($"✅ {validationResult.GetSummary()}");
+    Console.WriteLine($"{validationResult.GetSummary()}");
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"❌ ERRORE CRITICO CONFIGURAZIONE: {ex.Message}");
+    Console.WriteLine($"ERRORE CRITICO CONFIGURAZIONE: {ex.Message}");
     throw;
 }
 
-// 🎯 STATISTICHE FINALI
-Console.WriteLine("\n📈 STATISTICHE SERVIZI REGISTRATI:");
+// STATISTICHE FINALI
+Console.WriteLine("\nSTATISTICHE SERVIZI REGISTRATI:");
 Console.WriteLine($"   • Modalità: {(useMockServices ? "MOCK (sviluppo)" : "REAL (produzione)")}");
 Console.WriteLine($"   • Base URL: {baseUrl}");
 Console.WriteLine($"   • Servizi totali: {builder.Services.Count}");
 Console.WriteLine($"   • Timeout HTTP: {config.GetValue<int>("ApiSettings:TimeoutSeconds", 30)}s");
 Console.WriteLine($"   • Max Retries: {config.GetValue<int>("ApiSettings:MaxRetries", 3)}");
 
-Console.WriteLine("\n🐱 STREETCATS pronto per l'avvio!");
+Console.WriteLine("\nSTREETCATS pronto per l'avvio!");
 Console.WriteLine("=".PadRight(50, '='));
 
 await app.RunAsync();

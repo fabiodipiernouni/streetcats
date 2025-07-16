@@ -86,7 +86,7 @@ public class LoggingDelegatingHandler : DelegatingHandler
         try
         {
             var logBuilder = new StringBuilder();
-            logBuilder.AppendLine($"🔵 HTTP Request [{requestId}]");
+            logBuilder.AppendLine($"HTTP Request [{requestId}]");
             logBuilder.AppendLine($"   Method: {request.Method}");
             logBuilder.AppendLine($"   URL: {request.RequestUri}");
 
@@ -144,7 +144,7 @@ public class LoggingDelegatingHandler : DelegatingHandler
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "⚠️ Errore durante logging richiesta [{RequestId}]", requestId);
+            _logger?.LogWarning(ex, "Errore durante logging richiesta [{RequestId}]", requestId);
         }
     }
 
@@ -156,9 +156,9 @@ public class LoggingDelegatingHandler : DelegatingHandler
         try
         {
             var logBuilder = new StringBuilder();
-            var statusEmoji = response.IsSuccessStatusCode ? "🟢" : "🔴";
+            var statusPrefix = response.IsSuccessStatusCode ? "SUCCESS" : "ERROR";
 
-            logBuilder.AppendLine($"{statusEmoji} HTTP Response [{requestId}] - {elapsedMs}ms");
+            logBuilder.AppendLine($"{statusPrefix} HTTP Response [{requestId}] - {elapsedMs}ms");
             logBuilder.AppendLine($"   Status: {(int)response.StatusCode} {response.StatusCode}");
 
             // Headers interessanti
@@ -211,11 +211,11 @@ public class LoggingDelegatingHandler : DelegatingHandler
             // Performance categorization
             var perfCategory = elapsedMs switch
             {
-                < 200 => "⚡ Very Fast",
-                < 500 => "🚀 Fast",
-                < 1000 => "🏃 Acceptable",
-                < 3000 => "🐌 Slow",
-                _ => "🐢 Very Slow"
+                < 200 => "Very Fast",
+                < 500 => "Fast",
+                < 1000 => "Acceptable",
+                < 3000 => "Slow",
+                _ => "Very Slow"
             };
             logBuilder.AppendLine($"   Performance: {perfCategory}");
 
@@ -224,7 +224,7 @@ public class LoggingDelegatingHandler : DelegatingHandler
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "⚠️ Errore durante logging risposta [{RequestId}]", requestId);
+            _logger?.LogWarning(ex, "Errore durante logging risposta [{RequestId}]", requestId);
         }
     }
 
@@ -234,7 +234,7 @@ public class LoggingDelegatingHandler : DelegatingHandler
     private void LogSlowRequest(HttpRequestMessage request, long elapsedMs, string requestId)
     {
         _logger?.LogWarning(
-            "🐌 SLOW REQUEST [{RequestId}]: {Method} {Url} took {ElapsedMs}ms (threshold: {ThresholdMs}ms)",
+            "SLOW REQUEST [{RequestId}]: {Method} {Url} took {ElapsedMs}ms (threshold: {ThresholdMs}ms)",
             requestId,
             request.Method,
             request.RequestUri,
@@ -249,7 +249,7 @@ public class LoggingDelegatingHandler : DelegatingHandler
     private void LogRequestError(HttpRequestMessage request, Exception ex, long elapsedMs, string requestId)
     {
         _logger?.LogError(ex,
-            "❌ HTTP ERROR [{RequestId}]: {Method} {Url} failed after {ElapsedMs}ms - {ErrorType}: {ErrorMessage}",
+            "HTTP ERROR [{RequestId}]: {Method} {Url} failed after {ElapsedMs}ms - {ErrorType}: {ErrorMessage}",
             requestId,
             request.Method,
             request.RequestUri,

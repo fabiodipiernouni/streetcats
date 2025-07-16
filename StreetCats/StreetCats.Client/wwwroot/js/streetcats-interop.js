@@ -1,463 +1,550 @@
 /**
- * 🐱 STREETCATS JavaScript Interop
- * Funzioni per integrazione Blazor WebAssembly con browser APIs
+ * StreetCats JavaScript Interop
  */
 
 window.StreetCatsInterop = {
-    // 🗺️ MAPPA LEAFLET
-    maps: new Map(),
-    markers: new Map(),
+    // Configuration
+    config: {
+        mapInstances: new Map(),
+        authToken: null,
+        apiBaseUrl: 'http://localhost:3000/api'
+    },
+
+    // ========================================
+    // PHOTO UPLOAD FUNCTIONS
+    // ========================================
 
     /**
-     * Inizializza una mappa Leaflet
+     * Initialize photo upload component
      */
-    initializeMap: function (elementId, latitude, longitude, zoom = 13) {
+    initializePhotoUpload: function (componentRef) {
+        console.log('📸 Initializing photo upload component');
+
+        // Store component reference for callbacks
+        this.config.photoUploadComponent = componentRef;
+
+        // Setup paste event listener for Ctrl+V photo paste
+        document.addEventListener('paste', (e) => this.handlePasteImage(e, componentRef));
+
+        return true;
+    },
+
+    /**
+     * Upload photo to backend using FormData and fetch
+     */
+    uploadPhoto: async function (uploadUrl, fileReference, progressCallback) {
         try {
-            // Rimuovi mappa esistente se presente
-            if (this.maps.has(elementId)) {
-                this.maps.get(elementId).remove();
+            console.log('📤 Starting photo upload to:', uploadUrl);
+
+            // Get file from Blazor InputFile element
+            const fileInput = fileReference.element || fileReference;
+            const file = fileInput.files[0];
+
+            if (!file) {
+                throw new Error('No file selected');
             }
 
-            // Crea nuova mappa
-            const map = L.map(elementId).setView([latitude, longitude], zoom);
+            // Validate file
+            const validation = this.validateImageFile(file);
+            if (!validation.isValid) {
+                throw new Error(validation.error);
+            }
 
-            // Aggiungi layer OpenStreetMap
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
+            // Create FormData
+            const formData = new FormData();
+            formData.append('photo', file);
 
-            // Salva riferimento
-            this.maps.set(elementId, map);
-            this.markers.set(elementId, []);
+            // Get auth token
+            const token = this.getAuthToken();
 
-            console.log(`🗺️ Mappa ${elementId} inizializzata:`, { latitude, longitude, zoom });
-            return true;
+            // Setup headers
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            // Upload with progress tracking
+            const response = await this.uploadWithProgress(uploadUrl, formData, headers, progressCallback);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Photo upload successful:', result);
+
+            return JSON.stringify(result);
+
         } catch (error) {
-            console.error('❌ Errore inizializzazione mappa:', error);
-            return false;
+            console.error('❌ Photo upload failed:', error);
+            throw error;
         }
     },
 
     /**
-     * Aggiunge un marker alla mappa
+     * Upload with XMLHttpRequest for progress tracking
      */
-    addMarker: function (elementId, latitude, longitude, title, catId, popupContent = null) {
+    uploadWithProgress: function (url, formData, headers, progressCallback) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+
+            // Progress tracking
+            if (progressCallback) {
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        try {
+                            progressCallback.invokeMethodAsync('UpdateUploadProgress', percentComplete);
+                        } catch (err) {
+                            console.warn('⚠️ Progress callback failed:', err);
+                        }
+                    }
+                });
+            }
+
+            // Setup request
+            xhr.open('POST', url, true);
+
+            // Add headers
+            Object.entries(headers).forEach(([key, value]) => {
+                xhr.setRequestHeader(key, value);
+            });
+
+            // Handle response
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve({
+                        ok: true,
+                        status: xhr.status,
+                        json: () => Promise.resolve(JSON.parse(xhr.responseText))
+                    });
+                } else {
+                    reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+                }
+            };
+
+            xhr.onerror = () => reject(new Error('Network error during upload'));
+            xhr.ontimeout = () => reject(new Error('Upload timeout'));
+
+            // Set timeout (30 seconds for large files)
+            xhr.timeout = 30000;
+
+            // Send request
+            xhr.send(formData);
+        });
+    },
+
+    /**
+     * Validate image file before upload
+     */
+    validateImageFile: function (file) {
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+        if (!file) {
+            return { isValid: false, error: 'No file provided' };
+        }
+
+        if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+            return { isValid: false, error: 'Invalid file type. Use JPG, PNG, or WebP.' };
+        }
+
+        if (file.size > MAX_SIZE) {
+            return { isValid: false, error: 'File too large. Maximum 5MB allowed.' };
+        }
+
+        return { isValid: true };
+    },
+
+    /**
+     * Handle paste events for image upload
+     */
+    handlePasteImage: function (event, componentRef) {
+        const items = event.clipboardData?.items;
+        if (!items) return;
+
+        for (let item of items) {
+            if (item.type.startsWith('image/')) {
+                event.preventDefault();
+
+                const file = item.getAsFile();
+                if (file) {
+                    console.log('📋 Image pasted from clipboard:', file.name || 'clipboard-image');
+
+                    // Convert to base64 and send to Blazor component
+                    this.fileToBase64(file)
+                        .then(base64 => {
+                            componentRef.invokeMethodAsync('HandleDroppedFile',
+                                file.name || 'pasted-image.png',
+                                file.type,
+                                file.size,
+                                base64
+                            );
+                        })
+                        .catch(err => {
+                            console.error('❌ Error processing pasted image:', err);
+                        });
+                }
+                break;
+            }
+        }
+    },
+
+    /**
+     * Handle file drop for drag & drop upload
+     */
+    handleFileDrop: function (componentRef) {
+        // This is called after ondrop event in Blazor
+        // File data is handled by browser's drag & drop API
+        console.log('📥 File drop handled by Blazor component');
+        return true;
+    },
+
+    /**
+     * Trigger file input dialog
+     */
+    triggerFileInput: function (inputElement) {
+        if (inputElement && inputElement.click) {
+            inputElement.click();
+        }
+    },
+
+    /**
+     * Convert file to base64 string
+     */
+    fileToBase64: function (file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64 = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    },
+
+    // ========================================
+    // 🔐 AUTHENTICATION HELPERS
+    // ========================================
+
+    /**
+     * Get stored auth token
+     */
+    getAuthToken: function () {
         try {
-            const map = this.maps.get(elementId);
-            if (!map) {
-                console.error(`❌ Mappa ${elementId} non trovata`);
+            return localStorage.getItem('streetcats_token') || null;
+        } catch (error) {
+            console.warn('⚠️ Cannot access localStorage for auth token');
+            return null;
+        }
+    },
+
+    /**
+     * Set auth token for API calls
+     */
+    setAuthToken: function (token) {
+        try {
+            if (token) {
+                localStorage.setItem('streetcats_token', token);
+                this.config.authToken = token;
+            } else {
+                localStorage.removeItem('streetcats_token');
+                this.config.authToken = null;
+            }
+            console.log('🔐 Auth token updated');
+        } catch (error) {
+            console.warn('⚠️ Cannot store auth token in localStorage');
+        }
+    },
+
+    // ========================================
+    // 🗺️ MAP FUNCTIONS (Existing)
+    // ========================================
+
+    /**
+     * Initialize Leaflet map
+     */
+    initializeMap: function (mapId, latitude, longitude, zoom = 13) {
+        try {
+            // Check if Leaflet is loaded
+            if (typeof L === 'undefined') {
+                console.error('❌ Leaflet library not loaded');
                 return false;
             }
 
-            // Crea marker personalizzato per gatto
-            const catIcon = L.divIcon({
-                html: '🐱',
-                iconSize: [30, 30],
-                className: 'cat-marker',
-                iconAnchor: [15, 15]
-            });
+            // Destroy existing map
+            if (this.config.mapInstances.has(mapId)) {
+                this.config.mapInstances.get(mapId).remove();
+            }
 
-            const marker = L.marker([latitude, longitude], { icon: catIcon })
+            // Create new map
+            const map = L.map(mapId).setView([latitude, longitude], zoom);
+
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Store map instance
+            this.config.mapInstances.set(mapId, map);
+
+            console.log(`✅ Map initialized: ${mapId} at (${latitude}, ${longitude})`);
+            return true;
+
+        } catch (error) {
+            console.error('❌ Map initialization failed:', error);
+            return false;
+        }
+    },
+
+    /**
+     * Add marker to map
+     */
+    addMapMarker: function (mapId, latitude, longitude, title, popupContent, iconColor = 'blue') {
+        try {
+            const map = this.config.mapInstances.get(mapId);
+            if (!map) {
+                console.error(`❌ Map not found: ${mapId}`);
+                return false;
+            }
+
+            // Custom marker icon based on cat status
+            const icon = this.createCatIcon(iconColor);
+
+            // Create marker
+            const marker = L.marker([latitude, longitude], { icon })
                 .addTo(map);
 
-            // Aggiungi popup se fornito
+            // Add popup if content provided
             if (popupContent) {
                 marker.bindPopup(popupContent);
-            } else if (title) {
-                marker.bindPopup(`<b>${title}</b><br/>Clicca per dettagli`);
             }
 
-            // Salva marker con ID gatto
-            const markers = this.markers.get(elementId);
-            markers.push({ marker, catId, title });
+            // Add title
+            if (title) {
+                marker.bindTooltip(title);
+            }
 
-            console.log(`🐱 Marker aggiunto:`, { elementId, catId, title, latitude, longitude });
+            console.log(`📍 Marker added to ${mapId}: ${title}`);
             return true;
+
         } catch (error) {
-            console.error('❌ Errore aggiunta marker:', error);
+            console.error('❌ Add marker failed:', error);
             return false;
         }
     },
 
     /**
-     * Rimuove tutti i marker dalla mappa
+     * Create custom cat marker icon
      */
-    clearMarkers: function (elementId) {
-        try {
-            const map = this.maps.get(elementId);
-            const markers = this.markers.get(elementId);
+    createCatIcon: function (color = 'blue') {
+        const colors = {
+            'red': '#ef4444',     // missing
+            'green': '#10b981',   // found
+            'blue': '#3b82f6',    // seen
+            'yellow': '#f59e0b',  // injured
+            'purple': '#8b5cf6'   // adopted
+        };
 
-            if (map && markers) {
-                markers.forEach(item => {
-                    map.removeLayer(item.marker);
-                });
-                this.markers.set(elementId, []);
-                console.log(`🧹 Marker rimossi da ${elementId}`);
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('❌ Errore rimozione marker:', error);
-            return false;
-        }
+        const iconColor = colors[color] || colors.blue;
+
+        return L.divIcon({
+            className: 'custom-cat-marker',
+            html: `
+                <div style="
+                    background: ${iconColor};
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <span style="color: white; font-size: 14px;">🐱</span>
+                </div>
+            `,
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
+        });
     },
 
     /**
-     * Centra la mappa su coordinate specifiche
+     * Clear all markers from map
      */
-    setMapView: function (elementId, latitude, longitude, zoom = null) {
+    clearMapMarkers: function (mapId) {
         try {
-            const map = this.maps.get(elementId);
-            if (map) {
-                if (zoom !== null) {
-                    map.setView([latitude, longitude], zoom);
-                } else {
-                    map.setView([latitude, longitude]);
+            const map = this.config.mapInstances.get(mapId);
+            if (!map) return false;
+
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
                 }
-                console.log(`🎯 Mappa centrata:`, { elementId, latitude, longitude, zoom });
-                return true;
-            }
-            return false;
+            });
+
+            console.log(`🧹 Markers cleared from ${mapId}`);
+            return true;
+
         } catch (error) {
-            console.error('❌ Errore centratura mappa:', error);
+            console.error('❌ Clear markers failed:', error);
             return false;
         }
     },
 
-    /**
-     * Ottiene i bounds correnti della mappa
-     */
-    getMapBounds: function (elementId) {
-        try {
-            const map = this.maps.get(elementId);
-            if (map) {
-                const bounds = map.getBounds();
-                return {
-                    northEast: { lat: bounds.getNorthEast().lat, lng: bounds.getNorthEast().lng },
-                    southWest: { lat: bounds.getSouthWest().lat, lng: bounds.getSouthWest().lng }
-                };
-            }
-            return null;
-        } catch (error) {
-            console.error('❌ Errore recupero bounds:', error);
-            return null;
-        }
-    },
+    // ========================================
+    // 📍 GEOLOCATION FUNCTIONS
+    // ========================================
 
-    // 📍 GEOLOCALIZZAZIONE
     /**
-     * Ottiene la posizione corrente dell'utente
+     * Get current location using browser geolocation
      */
     getCurrentLocation: function () {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                reject('Geolocalizzazione non supportata dal browser');
+                reject(new Error('Geolocation not supported'));
                 return;
             }
 
             const options = {
                 enableHighAccuracy: true,
                 timeout: 10000,
-                maximumAge: 300000 // 5 minuti cache
+                maximumAge: 60000 // Cache for 1 minute
             };
 
             navigator.geolocation.getCurrentPosition(
-                (position) => {
+                position => {
                     const result = {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude,
                         accuracy: position.coords.accuracy,
                         timestamp: new Date().toISOString()
                     };
-                    console.log('📍 Posizione ottenuta:', result);
+
+                    console.log('📍 Location obtained:', result);
                     resolve(result);
                 },
-                (error) => {
-                    let message = 'Errore geolocalizzazione';
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            message = 'Permesso geolocalizzazione negato';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            message = 'Posizione non disponibile';
-                            break;
-                        case error.TIMEOUT:
-                            message = 'Timeout geolocalizzazione';
-                            break;
-                    }
-                    console.error('❌', message, error);
-                    reject(message);
+                error => {
+                    console.error('❌ Geolocation error:', error);
+
+                    // Provide fallback location (Naples center)
+                    const fallback = {
+                        latitude: 40.8518,
+                        longitude: 14.2681,
+                        accuracy: null,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    console.log('🏛️ Using fallback location (Naples)');
+                    resolve(fallback);
                 },
                 options
             );
         });
     },
 
-    // 💾 LOCAL STORAGE
-    /**
-     * Salva dati nel localStorage con gestione errori
-     */
-    setLocalStorage: function (key, value) {
-        try {
-            const serialized = JSON.stringify(value);
-            localStorage.setItem(key, serialized);
-            console.log(`💾 Salvato localStorage:`, { key, value });
-            return true;
-        } catch (error) {
-            console.error('❌ Errore salvataggio localStorage:', error);
-            return false;
-        }
-    },
+    // ========================================
+    // 🔧 UTILITY FUNCTIONS
+    // ========================================
 
     /**
-     * Recupera dati dal localStorage
+     * Show toast notification
      */
-    getLocalStorage: function (key) {
-        try {
-            const item = localStorage.getItem(key);
-            if (item === null) return null;
+    showToast: function (message, type = 'info', duration = 3000) {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `streetcats-toast toast-${type}`;
+        toast.textContent = message;
 
-            const parsed = JSON.parse(item);
-            console.log(`📂 Recuperato localStorage:`, { key, value: parsed });
-            return parsed;
-        } catch (error) {
-            console.error('❌ Errore recupero localStorage:', error);
-            return null;
-        }
-    },
+        // Styling
+        Object.assign(toast.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            background: type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6',
+            color: 'white',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            zIndex: '10000',
+            fontSize: '14px',
+            fontWeight: '500',
+            opacity: '0',
+            transition: 'opacity 0.3s ease',
+            maxWidth: '300px'
+        });
 
-    /**
-     * Rimuove dato dal localStorage
-     */
-    removeLocalStorage: function (key) {
-        try {
-            localStorage.removeItem(key);
-            console.log(`🗑️ Rimosso localStorage:`, key);
-            return true;
-        } catch (error) {
-            console.error('❌ Errore rimozione localStorage:', error);
-            return false;
-        }
-    },
+        // Add to page
+        document.body.appendChild(toast);
 
-    // 📱 DEVICE & BROWSER
-    /**
-     * Verifica se il dispositivo è mobile
-     */
-    isMobileDevice: function () {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    },
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+        });
 
-    /**
-     * Ottiene informazioni sul browser
-     */
-    getBrowserInfo: function () {
-        return {
-            userAgent: navigator.userAgent,
-            language: navigator.language,
-            cookieEnabled: navigator.cookieEnabled,
-            onLine: navigator.onLine,
-            platform: navigator.platform,
-            isMobile: this.isMobileDevice()
-        };
-    },
-
-    // 🔔 NOTIFICHE
-    /**
-     * Mostra notifica browser (se permesso)
-     */
-    showNotification: function (title, message, icon = '🐱') {
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, {
-                body: message,
-                icon: icon,
-                badge: icon,
-                tag: 'streetcats'
-            });
-            return true;
-        }
-        return false;
-    },
-
-    /**
-     * Richiede permesso notifiche
-     */
-    requestNotificationPermission: function () {
-        if ('Notification' in window) {
-            return Notification.requestPermission();
-        }
-        return Promise.reject('Notifiche non supportate');
-    },
-
-    // 🎨 UI UTILITIES
-    /**
-     * Scroll smooth verso elemento
-     */
-    scrollToElement: function (elementId, behavior = 'smooth') {
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.scrollIntoView({
-                behavior: behavior,
-                block: 'start',
-                inline: 'nearest'
-            });
-            return true;
-        }
-        return false;
-    },
-
-    /**
-     * Copia testo negli appunti
-     */
-    copyToClipboard: function (text) {
-        if (navigator.clipboard) {
-            return navigator.clipboard.writeText(text).then(() => {
-                console.log('📋 Testo copiato:', text);
-                return true;
-            }).catch(error => {
-                console.error('❌ Errore copia:', error);
-                return false;
-            });
-        } else {
-            // Fallback per browser più vecchi
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            const success = document.execCommand('copy');
-            document.body.removeChild(textArea);
-            return Promise.resolve(success);
-        }
-    },
-
-    // 🎯 EVENTI MAPPA INTERATTIVI
-    /**
-     * Configura callback per click sulla mappa
-     */
-    onMapClick: function (elementId, dotNetReference, methodName) {
-        try {
-            const map = this.maps.get(elementId);
-            if (map) {
-                map.on('click', function (e) {
-                    const data = {
-                        latitude: e.latlng.lat,
-                        longitude: e.latlng.lng
-                    };
-                    console.log('🖱️ Click mappa:', data);
-                    dotNetReference.invokeMethodAsync(methodName, data);
-                });
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('❌ Errore configurazione click mappa:', error);
-            return false;
-        }
-    },
-
-    // 🐱 MARKER INTERATTIVI CON CALLBACK
-
-    /**
-     * Variabile globale per il callback dei marker
-     */
-    markerClickCallback: null,
-
-    /**
-     * Imposta il callback per il click sui marker (chiamato da Map.razor)
-     */
-    setSelectCatCallback: function (dotNetReference) {
-        try {
-            this.markerClickCallback = dotNetReference;
-            console.log('🎯 Callback marker click configurato');
-            return true;
-        } catch (error) {
-            console.error('❌ Errore configurazione callback marker:', error);
-            return false;
-        }
-    },
-
-    /**
-     * Aggiunge un marker con callback per il click
-     */
-    addMarkerWithCallback: function (elementId, latitude, longitude, title, catId, popupContent = null) {
-        try {
-            const map = this.maps.get(elementId);
-            if (!map) {
-                console.error(`❌ Mappa ${elementId} non trovata`);
-                return false;
-            }
-
-            // Crea marker personalizzato per gatto
-            const catIcon = L.divIcon({
-                html: '🐱',
-                iconSize: [30, 30],
-                className: 'cat-marker',
-                iconAnchor: [15, 15]
-            });
-
-            const marker = L.marker([latitude, longitude], { icon: catIcon })
-                .addTo(map);
-
-            // Aggiungi popup se fornito
-            if (popupContent) {
-                marker.bindPopup(popupContent);
-            } else if (title) {
-                marker.bindPopup(`<b>${title}</b><br/>Clicca per dettagli`);
-            }
-
-            // Aggiungi evento click sul marker
-            const self = this;
-            marker.on('click', function (e) {
-                console.log('🐱 Click marker:', { catId, title });
-
-                // Chiama il callback C# se configurato
-                if (self.markerClickCallback) {
-                    self.markerClickCallback.invokeMethod('SelectCat', catId);
+        // Remove after duration
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
                 }
+            }, 300);
+        }, duration);
+    },
 
-                // Impedisci che il click si propaghi alla mappa
-                L.DomEvent.stopPropagation(e);
-            });
+    /**
+     * Log debug info
+     */
+    logDebug: function (message, data = null) {
+        console.log(`🐱 StreetCats: ${message}`, data || '');
+    },
 
-            // Salva marker con ID gatto
-            const markers = this.markers.get(elementId);
-            markers.push({ marker, catId, title });
+    /**
+     * Initialize all StreetCats components
+     */
+    initialize: function () {
+        console.log('🚀 StreetCats JavaScript Interop initialized');
 
-            console.log(`🐱 Marker con callback aggiunto:`, { elementId, catId, title, latitude, longitude });
+        // Check for required libraries
+        const checks = {
+            leaflet: typeof L !== 'undefined',
+            geolocation: 'geolocation' in navigator,
+            localStorage: this.testLocalStorage(),
+            fileApi: 'File' in window && 'FileReader' in window
+        };
+
+        console.log('📋 Environment checks:', checks);
+
+        return checks;
+    },
+
+    /**
+     * Test localStorage availability
+     */
+    testLocalStorage: function () {
+        try {
+            const test = 'streetcats_test';
+            localStorage.setItem(test, 'test');
+            localStorage.removeItem(test);
             return true;
-        } catch (error) {
-            console.error('❌ Errore aggiunta marker con callback:', error);
+        } catch (e) {
             return false;
         }
     }
 };
 
-// 🚀 INIZIALIZZAZIONE
-console.log('🐱 STREETCATS JavaScript Interop caricato');
+// Auto-initialize when script loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.StreetCatsInterop.initialize();
+});
 
-// Aggiungi stili CSS per marker personalizzati
-const style = document.createElement('style');
-style.textContent = `
-    .cat-marker {
-        background: white;
-        border: 2px solid #f97316;
-        border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-    }
-    .cat-marker:hover {
-        transform: scale(1.1);
-        z-index: 1000;
-    }
-    .leaflet-popup-content {
-        font-family: system-ui, sans-serif;
-        font-size: 14px;
-    }
-`;
-document.head.appendChild(style);
+// Export for module systems
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = window.StreetCatsInterop;
+}

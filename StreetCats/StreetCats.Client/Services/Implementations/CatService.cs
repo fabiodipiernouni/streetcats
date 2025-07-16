@@ -46,14 +46,14 @@ public class CatService : ApiService, ICatService
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("✅ Caricati {Count} gatti dal server", response.Data.Count);
+                Logger?.LogInformation("Caricati {Count} gatti dal server", response.Data.Count);
             }
 
             return response;
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante caricamento tutti i gatti");
+            Logger?.LogError(ex, "Errore durante caricamento tutti i gatti");
             return ExceptionHandler.HandleException<List<Cat>>(ex, "GetAllCats");
         }
     }
@@ -79,7 +79,7 @@ public class CatService : ApiService, ICatService
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("✅ Trovati {Count} gatti nel raggio di {RadiusKm} km da ({Lat}, {Lng})",
+                Logger?.LogInformation("Trovati {Count} gatti nel raggio di {RadiusKm} km da ({Lat}, {Lng})",
                     response.Data.Count, radiusKm, latitude, longitude);
             }
 
@@ -87,7 +87,7 @@ public class CatService : ApiService, ICatService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante ricerca gatti in area: {Lat}, {Lng}, {Radius}km",
+            Logger?.LogError(ex, "Errore durante ricerca gatti in area: {Lat}, {Lng}, {Radius}km",
                 latitude, longitude, radiusKm);
             return ExceptionHandler.HandleException<List<Cat>>(ex, "GetCatsInArea");
         }
@@ -109,7 +109,7 @@ public class CatService : ApiService, ICatService
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("✅ Caricato gatto: {CatName} (ID: {CatId})",
+                Logger?.LogInformation("Caricato gatto: {CatName} (ID: {CatId})",
                     response.Data.Name, response.Data.Id);
             }
 
@@ -117,7 +117,7 @@ public class CatService : ApiService, ICatService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante caricamento gatto con ID: {CatId}", id);
+            Logger?.LogError(ex, "Errore durante caricamento gatto con ID: {CatId}", id);
             return ExceptionHandler.HandleException<Cat>(ex, "GetCatById");
         }
     }
@@ -152,7 +152,7 @@ public class CatService : ApiService, ICatService
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("✅ Gatto creato: {CatName} (ID: {CatId}) da utente: {Username}",
+                Logger?.LogInformation("Gatto creato: {CatName} (ID: {CatId}) da utente: {Username}",
                     response.Data.Name, response.Data.Id, _authService.CurrentUser?.Username);
             }
 
@@ -160,7 +160,7 @@ public class CatService : ApiService, ICatService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante creazione gatto: {CatName}", cat.Name);
+            Logger?.LogError(ex, "Errore durante creazione gatto: {CatName}", cat.Name);
             return ExceptionHandler.HandleException<Cat>(ex, "CreateCat");
         }
     }
@@ -194,7 +194,7 @@ public class CatService : ApiService, ICatService
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("✅ Gatto aggiornato: {CatName} (ID: {CatId})",
+                Logger?.LogInformation("Gatto aggiornato: {CatName} (ID: {CatId})",
                     response.Data.Name, response.Data.Id);
             }
 
@@ -202,7 +202,7 @@ public class CatService : ApiService, ICatService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante aggiornamento gatto con ID: {CatId}", id);
+            Logger?.LogError(ex, "Errore durante aggiornamento gatto con ID: {CatId}", id);
             return ExceptionHandler.HandleException<Cat>(ex, "UpdateCat");
         }
     }
@@ -230,14 +230,14 @@ public class CatService : ApiService, ICatService
 
             if (response.Success)
             {
-                Logger?.LogInformation("✅ Gatto eliminato con ID: {CatId}", id);
+                Logger?.LogInformation("Gatto eliminato con ID: {CatId}", id);
             }
 
             return response;
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante eliminazione gatto con ID: {CatId}", id);
+            Logger?.LogError(ex, "Errore durante eliminazione gatto con ID: {CatId}", id);
             var errorResponse = ExceptionHandler.HandleException<object>(ex, "DeleteCat");
             return errorResponse.ConvertTo<bool>();
         }
@@ -268,7 +268,7 @@ public class CatService : ApiService, ICatService
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("✅ Trovati {Count} gatti per ricerca: '{SearchTerm}'",
+                Logger?.LogInformation("Trovati {Count} gatti per ricerca: '{SearchTerm}'",
                     response.Data.Count, searchTerm);
             }
 
@@ -276,7 +276,7 @@ public class CatService : ApiService, ICatService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante ricerca gatti con termine: {SearchTerm}", searchTerm);
+            Logger?.LogError(ex, "Errore durante ricerca gatti con termine: {SearchTerm}", searchTerm);
             return ExceptionHandler.HandleException<List<Cat>>(ex, "SearchCats");
         }
     }
@@ -297,7 +297,7 @@ public class CatService : ApiService, ICatService
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("✅ Caricati {Count} commenti per gatto ID: {CatId}",
+                Logger?.LogInformation("Caricati {Count} commenti per gatto ID: {CatId}",
                     response.Data.Count, catId);
             }
 
@@ -305,7 +305,7 @@ public class CatService : ApiService, ICatService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante caricamento commenti per gatto ID: {CatId}", catId);
+            Logger?.LogError(ex, "Errore durante caricamento commenti per gatto ID: {CatId}", catId);
             return ExceptionHandler.HandleException<List<Comment>>(ex, "GetComments");
         }
     }
@@ -356,7 +356,7 @@ public class CatService : ApiService, ICatService
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("✅ Commento aggiunto da {Username} per gatto ID: {CatId}",
+                Logger?.LogInformation("Commento aggiunto da {Username} per gatto ID: {CatId}",
                     _authService.CurrentUser?.Username, catId);
             }
 
@@ -364,7 +364,7 @@ public class CatService : ApiService, ICatService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante aggiunta commento per gatto ID: {CatId}", catId);
+            Logger?.LogError(ex, "Errore durante aggiunta commento per gatto ID: {CatId}", catId);
             return ExceptionHandler.HandleException<Comment>(ex, "AddComment");
         }
     }

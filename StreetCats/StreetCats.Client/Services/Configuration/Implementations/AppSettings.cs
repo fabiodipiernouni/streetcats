@@ -27,7 +27,7 @@ public class AppSettings : IAppSettings
             throw new InvalidOperationException($"Configurazione non valida: {errors}");
         }
 
-        Console.WriteLine($"🔧 AppSettings caricato: Modalità {(IsDevelopmentMode ? "SVILUPPO" : "PRODUZIONE")}");
+        Console.WriteLine($"AppSettings caricato: Modalità {(IsDevelopmentMode ? "SVILUPPO" : "PRODUZIONE")}");
         Console.WriteLine($"   • Base URL: {_apiConfig.BaseUrl}");
         Console.WriteLine($"   • Timeout: {_apiConfig.TimeoutSeconds}s");
         Console.WriteLine($"   • Max Retries: {_apiConfig.MaxRetries}");
@@ -94,12 +94,12 @@ public class AppSettings : IAppSettings
         // Avvisi per configurazioni sub-ottimali
         if (_apiConfig.TimeoutSeconds < 10)
         {
-            Console.WriteLine("⚠️ AVVISO: Timeout molto basso, potrebbe causare errori di rete");
+            Console.WriteLine("AVVISO: Timeout molto basso, potrebbe causare errori di rete");
         }
 
         if (_apiConfig.MaxRetries == 0)
         {
-            Console.WriteLine("⚠️ AVVISO: Retry disabilitati, l'app potrebbe essere meno resiliente");
+            Console.WriteLine("AVVISO: Retry disabilitati, l'app potrebbe essere meno resiliente");
         }
     }
 }

@@ -111,7 +111,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
             _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
         }
 
-        _logger?.LogDebug("🔧 HttpClient configurato: BaseUrl={BaseUrl}, Timeout={Timeout}s",
+        _logger?.LogDebug("HttpClient configurato: BaseUrl={BaseUrl}, Timeout={Timeout}s",
             _httpClient.BaseAddress, _appSettings.Api.TimeoutSeconds);
     }
 
@@ -136,12 +136,12 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
             return response;
         }
 
-        _logger?.LogInformation("🔄 Risposta 401 - tentativo refresh token per {Method} {Uri}", method, requestUri);
+        _logger?.LogInformation("Risposta 401 - tentativo refresh token per {Method} {Uri}", method, requestUri);
 
         // Tentativo refresh token (solo se abbiamo un token)
         if (_authService.IsAuthenticated && await TryRefreshTokenAsync())
         {
-            _logger?.LogInformation("✅ Token refreshed - nuovo tentativo richiesta");
+            _logger?.LogInformation("Token refreshed - nuovo tentativo richiesta");
 
             // Clona e riprova la richiesta con nuovo token
             var retryRequest = await CloneRequestAsync(request);
@@ -150,7 +150,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
         }
         else
         {
-            _logger?.LogWarning("❌ Refresh token fallito o non disponibile");
+            _logger?.LogWarning("Refresh token fallito o non disponibile");
         }
 
         return response;
@@ -179,7 +179,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
         if (_httpClient.DefaultRequestHeaders.Authorization?.Parameter != token)
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            _logger?.LogDebug("🔑 Token JWT applicato alle richieste");
+            _logger?.LogDebug("Token JWT applicato alle richieste");
         }
     }
 
@@ -190,7 +190,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
     {
         if (!await _refreshSemaphore.WaitAsync(TimeSpan.FromSeconds(10)))
         {
-            _logger?.LogWarning("⏰ Timeout lock refresh token");
+            _logger?.LogWarning("Timeout lock refresh token");
             return false;
         }
 
@@ -199,20 +199,20 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
             // Verifica se un altro thread ha già fatto refresh
             if (_authService.IsAuthenticated)
             {
-                _logger?.LogDebug("🔄 Token già refreshed da altro thread");
+                _logger?.LogDebug("Token già refreshed da altro thread");
                 return true;
             }
 
             // TODO: Implementare refresh token quando sarà disponibile l'endpoint
             // Per ora simuliamo un fallimento che forza re-login
-            _logger?.LogInformation("🔄 Refresh token non ancora implementato - richiesto re-login");
+            _logger?.LogInformation("Refresh token non ancora implementato - richiesto re-login");
 
             await _authService.LogoutAsync();
             return false;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "❌ Errore durante refresh token");
+            _logger?.LogError(ex, "Errore durante refresh token");
 
             // In caso di errore, logout per forzare re-login
             await _authService.LogoutAsync();
