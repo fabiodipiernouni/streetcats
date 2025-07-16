@@ -4,12 +4,14 @@
 @using StreetCats.Client.Models.DTOs
 @using System.ComponentModel.DataAnnotations
 @using StreetCats.Client.Services.Auth.Interfaces
+@using System.Text.Json
 
 @inject ICatService CatService
 @inject IAuthService AuthService
 @inject IMapService MapService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+
 
 <PageTitle>➕ Segnala Gatto - STREETCATS</PageTitle>
 
@@ -397,13 +399,17 @@
         }
     }
 
-    [JSInvokable]
-    public async Task OnMapClicked(dynamic locationData)
+[JSInvokable]
+public async Task OnMapClicked(JsonElement locationData)
+{
+    try
     {
-        try
+        // Parse JsonElement properly
+        if (locationData.TryGetProperty("latitude", out var latProperty) &&
+            locationData.TryGetProperty("longitude", out var lngProperty))
         {
-            catModel.Location.Latitude = (double)locationData.latitude;
-            catModel.Location.Longitude = (double)locationData.longitude;
+            catModel.Location.Latitude = latProperty.GetDouble();
+            catModel.Location.Longitude = lngProperty.GetDouble();
             
             // Prova a ottenere l'indirizzo
             try
@@ -423,12 +429,18 @@
             
             StateHasChanged();
         }
-        catch (Exception ex)
+        else
         {
-            Console.WriteLine($"Errore click mappa: {ex}");
+            Console.WriteLine("Invalid location data received");
         }
     }
-
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Errore click mappa: {ex}");
+        errorMessage = "Errore nel selezionare la posizione sulla mappa";
+        StateHasChanged();
+    }
+}
     private async Task GetCurrentLocation()
     {
         try

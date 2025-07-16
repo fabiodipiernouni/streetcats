@@ -1,14 +1,15 @@
 /**
  * StreetCats JavaScript Interop
- * Enhanced with Photo Upload Integration
  */
 
 window.StreetCatsInterop = {
     // Configuration
     config: {
         mapInstances: new Map(),
+        markerGroups: new Map(),
         authToken: null,
-        apiBaseUrl: 'http://localhost:3000/api'
+        apiBaseUrl: 'http://localhost:3000/api',
+        selectCatCallback: null
     },
 
     // ========================================
@@ -256,11 +257,11 @@ window.StreetCatsInterop = {
     },
 
     // ========================================
-    // MAP FUNCTIONS (Existing)
+    // MAP FUNCTIONS - Updated for Blazor Components
     // ========================================
 
     /**
-     * Initialize Leaflet map
+     * Initialize Leaflet map (Enhanced for Blazor compatibility)
      */
     initializeMap: function (mapId, latitude, longitude, zoom = 13) {
         try {
@@ -284,8 +285,12 @@ window.StreetCatsInterop = {
                 maxZoom: 19
             }).addTo(map);
 
-            // Store map instance
+            // Create marker group for this map
+            const markerGroup = L.layerGroup().addTo(map);
+
+            // Store map instance and marker group
             this.config.mapInstances.set(mapId, map);
+            this.config.markerGroups.set(mapId, markerGroup);
 
             console.log(`Map initialized: ${mapId} at (${latitude}, ${longitude})`);
             return true;
@@ -297,7 +302,122 @@ window.StreetCatsInterop = {
     },
 
     /**
-     * Add marker to map
+     * Set up map click callback (Required by AddCat.razor)
+     */
+    onMapClick: function (mapId, dotNetRef, methodName) {
+        try {
+            const map = this.config.mapInstances.get(mapId);
+            if (!map) {
+                console.error(`Map ${mapId} not found for click handler`);
+                return;
+            }
+
+            // Remove existing click handlers
+            map.off('click');
+
+            // Add click handler
+            map.on('click', function (e) {
+                const locationData = {
+                    latitude: e.latlng.lat,
+                    longitude: e.latlng.lng
+                };
+
+                console.log(`Map clicked at: ${locationData.latitude}, ${locationData.longitude}`);
+
+                try {
+                    dotNetRef.invokeMethodAsync(methodName, locationData);
+                } catch (err) {
+                    console.error('Error calling Blazor method:', err);
+                }
+            });
+
+            console.log(`Map click callback set for ${mapId}`);
+        } catch (error) {
+            console.error('Error setting map click callback:', error);
+        }
+    },
+
+    /**
+     * Set map view (Required by both components)
+     */
+    setMapView: function (mapId, latitude, longitude, zoom) {
+        try {
+            const map = this.config.mapInstances.get(mapId);
+            if (map) {
+                map.setView([latitude, longitude], zoom);
+                console.log(`Map view set for ${mapId}: ${latitude}, ${longitude}, zoom: ${zoom}`);
+            } else {
+                console.error(`Map ${mapId} not found for setMapView`);
+            }
+        } catch (error) {
+            console.error('Error setting map view:', error);
+        }
+    },
+
+    /**
+     * Clear all markers (Required by Map.razor)
+     */
+    clearMarkers: function (mapId) {
+        try {
+            const markerGroup = this.config.markerGroups.get(mapId);
+            if (markerGroup) {
+                markerGroup.clearLayers();
+                console.log(`Markers cleared from ${mapId}`);
+            } else {
+                console.error(`Marker group for ${mapId} not found`);
+            }
+        } catch (error) {
+            console.error('Error clearing markers:', error);
+        }
+    },
+
+    /**
+     * Add marker with callback (Required by Map.razor)
+     */
+    addMarkerWithCallback: function (mapId, latitude, longitude, title, catId, popupContent) {
+        try {
+            const markerGroup = this.config.markerGroups.get(mapId);
+            if (!markerGroup) {
+                console.error(`Marker group for ${mapId} not found`);
+                return;
+            }
+
+            // Create custom icon based on cat status
+            const icon = this.createCatIcon('blue'); // Default blue, can be enhanced
+
+            // Create marker
+            const marker = L.marker([latitude, longitude], { icon })
+                .bindPopup(popupContent)
+                .on('click', () => {
+                    console.log(`Marker clicked for cat: ${catId}`);
+                    if (this.config.selectCatCallback) {
+                        try {
+                            this.config.selectCatCallback.invokeMethodAsync('SelectCat', catId);
+                        } catch (err) {
+                            console.error('Error calling SelectCat callback:', err);
+                        }
+                    }
+                });
+
+            // Add to marker group
+            markerGroup.addLayer(marker);
+
+            console.log(`Marker added to ${mapId}: ${title} (${catId})`);
+        } catch (error) {
+            console.error('Error adding marker with callback:', error);
+        }
+    },
+
+    /**
+     * Set select cat callback (Required by Map.razor)
+     */
+    setSelectCatCallback: function (dotNetRef) {
+        this.config.selectCatCallback = dotNetRef;
+        console.log('Select cat callback registered');
+    },
+
+    /**
+     * Add marker to map (Legacy method, kept for compatibility)
      */
     addMapMarker: function (mapId, latitude, longitude, title, popupContent, iconColor = 'blue') {
         try {
@@ -361,7 +481,7 @@ window.StreetCatsInterop = {
                     align-items: center;
                     justify-content: center;
                 ">
-                    <span style="color: white; font-size: 14px;">CAT</span>
+                    <span style="color: white; font-size: 12px;">🐱</span>
                 </div>
             `,
             iconSize: [30, 30],
@@ -371,7 +491,7 @@ window.StreetCatsInterop = {
     },
 
     /**
-     * Clear all markers from map
+     * Clear all markers from map (Legacy method, kept for compatibility)
      */
     clearMapMarkers: function (mapId) {
         try {
