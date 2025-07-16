@@ -32,8 +32,8 @@ const createCatSchema = Joi.object({
     }),
   
   status: Joi.string()
-    .valid('sano', 'ferito', 'scomparso', 'adottato', 'malato', 'sterilizzato', 'randagio', 'domestico')
-    .default('sano'),
+      .valid('Avvistato', 'Adottato','Disperso', 'InCura', 'Deceduto')
+      .default('Avvistato'),
   
   photoUrl: Joi.string()
     .uri()
