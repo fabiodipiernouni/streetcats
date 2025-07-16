@@ -1,7 +1,6 @@
 using Microsoft.JSInterop;
 using StreetCats.Client.Models;
 using StreetCats.Client.Models.DTOs;
-using StreetCats.Client.Services.Http;
 using StreetCats.Client.Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -10,16 +9,24 @@ using System.Threading.Tasks;
 using StreetCats.Client.Services.Auth.Interfaces;
 using StreetCats.Client.Services.Configuration.Interfaces;
 using StreetCats.Client.Services.Exceptions.Interfaces;
+using System.Net.Http;
+using System.Text;
 
 namespace StreetCats.Client.Services.Auth.Implementations;
 
 /// <summary>
 /// Implementazione REALE del servizio di autenticazione
 /// Comunica con le API REST del backend per login/registrazione
+/// USA HttpClient NORMALE per evitare dipendenza circolare
 /// </summary>
-public class AuthService : ApiService, IAuthService
+public class AuthService : IAuthService
 {
+    private readonly HttpClient _httpClient;
+    private readonly IAppSettings _appSettings;
+    private readonly IApiExceptionHandler _exceptionHandler;
     private readonly IJSRuntime _jsRuntime;
+    private readonly ILogger<AuthService>? _logger;
+
     private User? _currentUser;
     private string? _token;
 
@@ -29,14 +36,20 @@ public class AuthService : ApiService, IAuthService
     private const string REFRESH_TOKEN_KEY = "streetcats_refresh_token";
 
     public AuthService(
-        IAuthenticatedHttpClient httpClient,
+        HttpClient httpClient,  // HttpClient normale, NON IAuthenticatedHttpClient
         IAppSettings appSettings,
         IApiExceptionHandler exceptionHandler,
         IJSRuntime jsRuntime,
         ILogger<AuthService>? logger = null)
-        : base(httpClient, appSettings, exceptionHandler, logger)
     {
+        _httpClient = httpClient;
+        _appSettings = appSettings;
+        _exceptionHandler = exceptionHandler;
         _jsRuntime = jsRuntime;
+        _logger = logger;
+
+        // Configura HttpClient per API
+        ConfigureHttpClient();
     }
 
     #region Public Properties
@@ -58,7 +71,7 @@ public class AuthService : ApiService, IAuthService
     {
         try
         {
-            LogOperationStart("InitializeAuth");
+            _logger?.LogInformation("Inizializzazione AuthService...");
 
             // Carica token e utente dal localStorage
             var savedToken = await GetFromLocalStorageAsync<string>(TOKEN_KEY);
@@ -78,29 +91,29 @@ public class AuthService : ApiService, IAuthService
                             _token = savedToken;
                             _currentUser = savedUser;
 
-                            Logger?.LogInformation("Sessione ripristinata per utente: {Username}", savedUser.Username);
+                            _logger?.LogInformation("Sessione ripristinata per utente: {Username}", savedUser.Username);
                             AuthenticationStateChanged?.Invoke(true);
                             return;
                         }
                         else
                         {
-                            Logger?.LogWarning("Token salvato non valido - cleanup necessario");
+                            _logger?.LogWarning("Token salvato non valido - cleanup necessario");
                         }
                     }
                 }
                 catch (JsonException ex)
                 {
-                    Logger?.LogWarning(ex, "Errore deserializzazione dati utente salvati");
+                    _logger?.LogWarning(ex, "Errore deserializzazione dati utente salvati");
                 }
             }
 
             // Se arriviamo qui, non c'è sessione valida
             await LogoutAsync();
-            Logger?.LogInformation("Nessuna sessione valida trovata");
+            _logger?.LogInformation("Nessuna sessione valida trovata");
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "Errore durante inizializzazione auth");
+            _logger?.LogError(ex, "Errore durante inizializzazione auth");
             await LogoutAsync(); // Cleanup in caso di errore
         }
     }
@@ -112,7 +125,7 @@ public class AuthService : ApiService, IAuthService
     {
         try
         {
-            LogOperationStart("Login", new { Username = request.Username });
+            _logger?.LogInformation("Tentativo login per utente: {Username}", request.Username);
 
             // Validazione input
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
@@ -124,8 +137,8 @@ public class AuthService : ApiService, IAuthService
             }
 
             // Chiamata API login
-            var endpoint = AppSettings.Api.Endpoints.AuthLogin;
-            var response = await PostAsync<AuthResponse>(endpoint, request, "Login API");
+            var endpoint = $"{_appSettings.Api.BaseUrl}{_appSettings.Api.Endpoints.AuthLogin}";
+            var response = await PostAsync<AuthResponse>(endpoint, request);
 
             if (response.Success && response.Data != null)
             {
@@ -135,7 +148,7 @@ public class AuthService : ApiService, IAuthService
                 _token = response.Data.Token;
                 _currentUser = response.Data.User;
 
-                Logger?.LogInformation("Login riuscito per utente: {Username}", request.Username);
+                _logger?.LogInformation("Login riuscito per utente: {Username}", request.Username);
                 AuthenticationStateChanged?.Invoke(true);
             }
 
@@ -143,8 +156,8 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "Errore durante login per utente: {Username}", request.Username);
-            return ExceptionHandler.HandleException<AuthResponse>(ex, "Login");
+            _logger?.LogError(ex, "Errore durante login per utente: {Username}", request.Username);
+            return _exceptionHandler.HandleException<AuthResponse>(ex, "Login");
         }
     }
 
@@ -155,7 +168,8 @@ public class AuthService : ApiService, IAuthService
     {
         try
         {
-            LogOperationStart("Register", new { Username = request.Username, Email = request.Email });
+            _logger?.LogInformation("Tentativo registrazione per utente: {Username}, Email: {Email}",
+                request.Username, request.Email);
 
             // Validazioni base
             var validationError = ValidateRegisterRequest(request);
@@ -165,8 +179,8 @@ public class AuthService : ApiService, IAuthService
             }
 
             // Chiamata API registrazione
-            var endpoint = AppSettings.Api.Endpoints.AuthRegister;
-            var response = await PostAsync<AuthResponse>(endpoint, request, "Register API");
+            var endpoint = $"{_appSettings.Api.BaseUrl}{_appSettings.Api.Endpoints.AuthRegister}";
+            var response = await PostAsync<AuthResponse>(endpoint, request);
 
             if (response.Success && response.Data != null)
             {
@@ -176,7 +190,7 @@ public class AuthService : ApiService, IAuthService
                 _token = response.Data.Token;
                 _currentUser = response.Data.User;
 
-                Logger?.LogInformation("Registrazione riuscita per utente: {Username}", request.Username);
+                _logger?.LogInformation("Registrazione riuscita per utente: {Username}", request.Username);
                 AuthenticationStateChanged?.Invoke(true);
             }
 
@@ -184,8 +198,8 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "Errore durante registrazione per utente: {Username}", request.Username);
-            return ExceptionHandler.HandleException<AuthResponse>(ex, "Register");
+            _logger?.LogError(ex, "Errore durante registrazione per utente: {Username}", request.Username);
+            return _exceptionHandler.HandleException<AuthResponse>(ex, "Register");
         }
     }
 
@@ -196,7 +210,7 @@ public class AuthService : ApiService, IAuthService
     {
         try
         {
-            Logger?.LogInformation("Logout utente: {Username}", _currentUser?.Username ?? "sconosciuto");
+            _logger?.LogInformation("Logout utente: {Username}", _currentUser?.Username ?? "sconosciuto");
 
             // Pulizia stato locale
             _token = null;
@@ -210,11 +224,11 @@ public class AuthService : ApiService, IAuthService
             // Notifica cambiamento stato
             AuthenticationStateChanged?.Invoke(false);
 
-            Logger?.LogInformation("Logout completato");
+            _logger?.LogInformation("Logout completato");
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "Errore durante logout");
+            _logger?.LogError(ex, "Errore durante logout");
         }
     }
 
@@ -236,34 +250,82 @@ public class AuthService : ApiService, IAuthService
     #region Private Helper Methods
 
     /// <summary>
+    /// Configura HttpClient per chiamate API
+    /// </summary>
+    private void ConfigureHttpClient()
+    {
+        // Headers di default
+        foreach (var header in _appSettings.Api.DefaultHeaders)
+        {
+            if (!_httpClient.DefaultRequestHeaders.Contains(header.Key))
+            {
+                _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+            }
+        }
+
+        // Timeout
+        _httpClient.Timeout = _appSettings.Api.GetTimeout();
+    }
+
+    /// <summary>
     /// Valida un token specifico con il server
     /// </summary>
     private async Task<bool> ValidateTokenAsync(string token)
     {
         try
         {
-            // Semplice check: prova a ottenere il profilo utente
-            var endpoint = AppSettings.Api.Endpoints.AuthProfile;
+            var endpoint = $"{_appSettings.Api.BaseUrl}{_appSettings.Api.Endpoints.AuthProfile}";
 
-            // Temporarily set token for validation request
-            var originalToken = _token;
-            _token = token;
+            // Crea richiesta con token
+            var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-            try
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Errore validazione token");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Effettua chiamata POST generica
+    /// </summary>
+    private async Task<ApiResponse<T>> PostAsync<T>(string endpoint, object data)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(data, GetJsonOptions());
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync(endpoint, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
             {
-                var response = await GetAsync<User>(endpoint, "ValidateToken");
-                return response.Success;
+                var result = JsonSerializer.Deserialize<ApiResponse<T>>(responseContent, GetJsonOptions());
+                return result ?? ApiResponse<T>.ErrorResponse("Risposta vuota dal server");
             }
-            finally
+            else
             {
-                // Restore original token
-                _token = originalToken;
+                // Prova a deserializzare errore strutturato
+                try
+                {
+                    var errorResponse = JsonSerializer.Deserialize<ApiResponse<T>>(responseContent, GetJsonOptions());
+                    return errorResponse ?? ApiResponse<T>.ErrorResponse($"Errore HTTP {response.StatusCode}");
+                }
+                catch
+                {
+                    return ApiResponse<T>.ErrorResponse($"Errore HTTP {response.StatusCode}: {responseContent}");
+                }
             }
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "Errore validazione token");
-            return false;
+            _logger?.LogError(ex, "Errore chiamata POST a {Endpoint}", endpoint);
+            return ApiResponse<T>.ErrorResponse($"Errore di rete: {ex.Message}");
         }
     }
 
@@ -282,11 +344,11 @@ public class AuthService : ApiService, IAuthService
                 await SaveToLocalStorageAsync(REFRESH_TOKEN_KEY, authResponse.RefreshToken);
             }
 
-            Logger?.LogDebug("Stato autenticazione salvato in localStorage");
+            _logger?.LogDebug("Stato autenticazione salvato in localStorage");
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "Errore salvataggio stato auth in localStorage");
+            _logger?.LogWarning(ex, "Errore salvataggio stato auth in localStorage");
         }
     }
 
@@ -344,6 +406,18 @@ public class AuthService : ApiService, IAuthService
         }
     }
 
+    /// <summary>
+    /// Opzioni JSON standardizzate
+    /// </summary>
+    private JsonSerializerOptions GetJsonOptions()
+    {
+        return new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+    }
+
     #endregion
 
     #region LocalStorage Helpers
@@ -359,7 +433,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "Errore salvataggio localStorage per chiave: {Key}", key);
+            _logger?.LogWarning(ex, "Errore salvataggio localStorage per chiave: {Key}", key);
         }
     }
 
@@ -386,7 +460,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "Errore lettura localStorage per chiave: {Key}", key);
+            _logger?.LogWarning(ex, "Errore lettura localStorage per chiave: {Key}", key);
             return default;
         }
     }
@@ -402,7 +476,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "Errore rimozione localStorage per chiave: {Key}", key);
+            _logger?.LogWarning(ex, "Errore rimozione localStorage per chiave: {Key}", key);
         }
     }
 

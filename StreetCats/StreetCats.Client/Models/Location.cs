@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace StreetCats.Client.Models;
 
@@ -10,16 +11,19 @@ public class Location
     /// <summary>
     /// Tipo di geometria (sempre "Point" per le posizioni)
     /// </summary>
+    [JsonPropertyName("type")]
     public string Type { get; set; } = "Point";
 
     /// <summary>
     /// Coordinate [longitude, latitude] - formato GeoJSON
     /// </summary>
+    [JsonPropertyName("coordinates")]
     public double[] Coordinates { get; set; } = new double[2];
 
     /// <summary>
-    /// Latitudine (per facilit‡ di accesso)
+    /// Latitudine (per facilit√† di accesso)
     /// </summary>
+    [JsonIgnore]
     public double Latitude
     {
         get => Coordinates.Length > 1 ? Coordinates[1] : 0;
@@ -27,8 +31,9 @@ public class Location
     }
 
     /// <summary>
-    /// Longitudine (per facilit‡ di accesso)
+    /// Longitudine (per facilit√† di accesso)
     /// </summary>
+    [JsonIgnore]
     public double Longitude
     {
         get => Coordinates.Length > 0 ? Coordinates[0] : 0;
@@ -38,18 +43,21 @@ public class Location
     /// <summary>
     /// Indirizzo testuale della posizione
     /// </summary>
-    [StringLength(200, ErrorMessage = "L'indirizzo non puÚ superare 200 caratteri")]
+    [StringLength(200, ErrorMessage = "L'indirizzo non pu√≤ superare 200 caratteri")]
+    [JsonPropertyName("address")]
     public string Address { get; set; } = string.Empty;
 
     /// <summary>
-    /// Citt‡
+    /// Citt√†
     /// </summary>
-    [StringLength(100, ErrorMessage = "La citt‡ non puÚ superare 100 caratteri")]
+    [StringLength(100, ErrorMessage = "La citt√† non pu√≤ superare 100 caratteri")]
+    [JsonPropertyName("city")]
     public string City { get; set; } = string.Empty;
 
     /// <summary>
     /// Codice postale
     /// </summary>
-    [StringLength(10, ErrorMessage = "Il codice postale non puÚ superare 10 caratteri")]
+    [StringLength(10, ErrorMessage = "Il codice postale non pu√≤ superare 10 caratteri")]
+    [JsonPropertyName("postalCode")]
     public string PostalCode { get; set; } = string.Empty;
 }

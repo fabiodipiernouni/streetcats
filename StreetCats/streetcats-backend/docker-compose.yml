@@ -36,7 +36,7 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/streetcats
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
       - JWT_EXPIRES_IN=7d
-      - FRONTEND_URL=https://localhost:7281
+      - FRONTEND_URL=https://localhost:5045
     ports:
       - "3000:3000"
     networks:

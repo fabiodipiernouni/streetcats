@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 using StreetCats.Client;
 using StreetCats.Client.Services.Interfaces;
 using StreetCats.Client.Services.Implementations;
@@ -49,18 +50,30 @@ builder.Services.AddScoped<IApiExceptionHandler, ApiExceptionHandler>();
 builder.Services.AddScoped<LoggingDelegatingHandler>();
 builder.Services.AddScoped<RetryDelegatingHandler>();
 
-// AuthenticatedHttpClient per API calls
-builder.Services.AddScoped<IAuthenticatedHttpClient, AuthenticatedHttpClient>();
-
 if (!useMockServices)
 {
     // CONFIGURAZIONE PER PRODUZIONE - API REALI
     Console.WriteLine("Configurando servizi REALI per API REST...");
 
-    // HttpClient configurato per API autenticate
+    // HttpClient per AuthService (NON autenticato)
+    builder.Services.AddHttpClient("AuthClient", (serviceProvider, client) =>
+    {
+        var appSettings = serviceProvider.GetRequiredService<IAppSettings>();
+        client.Timeout = appSettings.Api.GetTimeout();
+
+        // Headers di default
+        foreach (var header in appSettings.Api.DefaultHeaders)
+        {
+            client.DefaultRequestHeaders.Add(header.Key, header.Value);
+        }
+    });
+
+    // HttpClient per altri servizi (autenticato)
     builder.Services.AddHttpClient("StreetCatsApi", (serviceProvider, client) =>
     {
         var appSettings = serviceProvider.GetRequiredService<IAppSettings>();
+
+        Console.WriteLine($"BaseUrl dal config: {appSettings.Api.BaseUrl}");
 
         client.BaseAddress = new Uri(appSettings.Api.BaseUrl);
         client.Timeout = appSettings.Api.GetTimeout();
@@ -74,8 +87,25 @@ if (!useMockServices)
     .AddHttpMessageHandler<RetryDelegatingHandler>()
     .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
-    // SERVIZI REALI
-    builder.Services.AddScoped<IAuthService, AuthService>();
+    // AuthenticatedHttpClient per API calls (escluso AuthService)
+    builder.Services.AddScoped<IAuthenticatedHttpClient, AuthenticatedHttpClient>();
+
+    // SERVIZI REALI - AuthService usa HttpClient normale
+    builder.Services.AddScoped<IAuthService>(serviceProvider =>
+    {
+        var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        var httpClient = httpClientFactory.CreateClient("AuthClient");
+
+        return new AuthService(
+            httpClient,
+            serviceProvider.GetRequiredService<IAppSettings>(),
+            serviceProvider.GetRequiredService<IApiExceptionHandler>(),
+            serviceProvider.GetRequiredService<IJSRuntime>(),
+            serviceProvider.GetService<ILogger<AuthService>>()
+        );
+    });
+
+    // Altri servizi usano AuthenticatedHttpClient
     builder.Services.AddScoped<ICatService, CatService>();
     builder.Services.AddScoped<IMapService, MapService>();
 

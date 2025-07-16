@@ -95,7 +95,7 @@ public class AuthenticatedHttpClient : IAuthenticatedHttpClient, IDisposable
         // Base address
         if (!string.IsNullOrEmpty(_appSettings.Api.BaseUrl))
         {
-            _httpClient.BaseAddress = new Uri(_appSettings.Api.BaseUrl);
+            _httpClient.BaseAddress = new Uri("http://127.0.0.1:3000/api");//new Uri(_appSettings.Api.BaseUrl);
         }
 
         // Timeout

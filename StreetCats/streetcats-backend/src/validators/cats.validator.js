@@ -35,12 +35,20 @@ const createCatSchema = Joi.object({
       .valid('Avvistato', 'Adottato','Disperso', 'InCura', 'Deceduto')
       .default('Avvistato'),
   
-  photoUrl: Joi.string()
-    .uri()
-    .optional()
-    .messages({
-      'string.uri': 'URL foto non valido'
-    }),
+  photoUrl: Joi.alternatives()
+      .try(
+          Joi.string().uri().messages({
+              'string.uri': 'URL foto non valido'
+          }),
+          Joi.string().allow('').messages({
+              'string.empty': 'URL foto può essere vuoto'
+          }),
+          Joi.allow(null)
+      )
+      .optional()
+      .messages({
+          'alternatives.match': 'photoUrl deve essere un URL valido, stringa vuota o null'
+      }),
   
   location: Joi.object({
     coordinates: Joi.array()

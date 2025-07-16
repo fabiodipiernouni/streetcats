@@ -21,13 +21,27 @@ app.use(helmet());
 app.use(compression());
 app.use(mongoSanitize());
 
+console.log(config.FRONTEND_URL);
+
+/*const allowedOrigins = config.ALLOWED_ORIGINS ?
+    config.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()) :
+    [config.FRONTEND_URL];
+
 // CORS configuration
 app.use(cors({
-  origin: config.FRONTEND_URL,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+})); */
+
+app.use(cors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['*']  // Permette tutti gli header in development
 }));
+
 
 // Rate limiting
 const limiter = rateLimit({

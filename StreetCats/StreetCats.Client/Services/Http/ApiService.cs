@@ -50,8 +50,7 @@ public abstract class ApiService
         try
         {
             Logger?.LogDebug("{Operation} - inizio", operationName);
-
-            var response = await HttpClient.GetAsync(endpoint);
+            var response = await HttpClient.GetAsync($"{AppSettings.Api.BaseUrl}{endpoint}");
             return await ProcessResponseAsync<T>(response, operationName);
         }
         catch (Exception ex)
@@ -175,7 +174,7 @@ public abstract class ApiService
         {
             Logger?.LogDebug("{Operation} - inizio", operationName);
 
-            var response = await HttpClient.DeleteAsync(endpoint);
+            var response = await HttpClient.DeleteAsync($"{AppSettings.Api.BaseUrl}{endpoint}");
             return await ProcessResponseAsync<T>(response, operationName);
         }
         catch (Exception ex)
@@ -222,6 +221,7 @@ public abstract class ApiService
 
             // Leggi contenuto
             var content = await response.Content.ReadAsStringAsync();
+            Logger?.LogDebug("Raw response content for {Operation}: {Content}", operation, content);
 
             if (string.IsNullOrWhiteSpace(content))
             {
@@ -252,28 +252,65 @@ public abstract class ApiService
                 if (apiResponse != null)
                 {
                     apiResponse.StatusCode = (int)response.StatusCode;
+                    Logger?.LogDebug("Successfully deserialized as ApiResponse<T> for {Operation}", operation);
                     return apiResponse;
                 }
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
+                Logger?.LogDebug("Failed to deserialize as ApiResponse<T> for {Operation}: {Error}", operation, ex.Message);
                 // Se fallisce, prova deserializzazione diretta del tipo T
             }
 
-            // Deserializzazione diretta del tipo T
-            var data = JsonSerializer.Deserialize<T>(content, GetJsonOptions());
+            // Prova a estrarre il campo "data" se presente
+            try
+            {
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+                
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    Console.WriteLine($"Found 'data' property: {dataElement.GetRawText()}");
+                    Logger?.LogDebug("Found 'data' property, attempting to deserialize nested data for {Operation}", operation);
+                    var data = JsonSerializer.Deserialize<T>(dataElement.GetRawText(), GetJsonOptions());
+                    
+                    // Estrai altri campi se presenti
+                    var success = root.TryGetProperty("success", out var successElement) ? successElement.GetBoolean() : true;
+                    var message = root.TryGetProperty("message", out var messageElement) ? messageElement.GetString() : "Operazione completata con successo";
+                    
+                    return new ApiResponse<T>
+                    {
+                        Success = success,
+                        Message = message ?? "Operazione completata con successo",
+                        Data = data,
+                        StatusCode = (int)response.StatusCode
+                    };
+                }
+                else
+                    Console.WriteLine("No 'data' property found in response.");
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Error extracting 'data' property: {ex.Message}");
+                Logger?.LogDebug("Failed to extract 'data' property for {Operation}: {Error}", operation, ex.Message);
+            }
+
+            Logger?.LogDebug("Attempting direct deserialization of type {Type} for {Operation}", typeof(T).Name, operation);
+            
+            // Deserializzazione diretta del tipo T come ultimo tentativo
+            var directData = JsonSerializer.Deserialize<T>(content, GetJsonOptions());
 
             return new ApiResponse<T>
             {
                 Success = true,
                 Message = "Operazione completata con successo",
-                Data = data,
+                Data = directData,
                 StatusCode = (int)response.StatusCode
             };
         }
         catch (JsonException jsonEx)
         {
-            Logger?.LogError(jsonEx, "Errore deserializzazione JSON per {Operation}", operation);
+            Logger?.LogError(jsonEx, "Errore deserializzazione JSON per {Operation}. Content: {Content}", operation, await response.Content.ReadAsStringAsync());
 
             return new ApiResponse<T>
             {

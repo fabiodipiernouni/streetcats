@@ -42,14 +42,31 @@ public class CatService : ApiService, ICatService
             LogOperationStart("GetAllCats");
 
             var endpoint = AppSettings.Api.Endpoints.CatsBase;
-            var response = await GetAsync<List<Cat>>(endpoint, "GetAllCats API");
+            var response = await GetAsync<CatsApiResponse>(endpoint, "GetAllCats API");
 
             if (response.Success && response.Data != null)
             {
-                Logger?.LogInformation("Caricati {Count} gatti dal server", response.Data.Count);
+                Logger?.LogInformation("Caricati {Count} gatti dal server (pagina {Page}/{TotalPages})",
+                    response.Data.Cats.Count, response.Data.Pagination.Page, response.Data.Pagination.TotalPages);
+
+                // Restituisce solo la lista dei gatti
+                return new ApiResponse<List<Cat>>
+                {
+                    Success = true,
+                    Message = response.Message,
+                    Data = response.Data.Cats,
+                    StatusCode = response.StatusCode
+                };
             }
 
-            return response;
+            return new ApiResponse<List<Cat>>
+            {
+                Success = false,
+                Message = response.Message,
+                Errors = response.Errors,
+                StatusCode = response.StatusCode,
+                Data = new List<Cat>()
+            };
         }
         catch (Exception ex)
         {
@@ -75,15 +92,31 @@ public class CatService : ApiService, ICatService
             };
 
             var endpoint = AppSettings.Api.Endpoints.CatsInArea;
-            var response = await GetAsync<List<Cat>>(endpoint, queryParams, "GetCatsInArea API");
+            var response = await GetAsync<CatsApiResponse>(endpoint, queryParams, "GetCatsInArea API");
 
             if (response.Success && response.Data != null)
             {
                 Logger?.LogInformation("Trovati {Count} gatti nel raggio di {RadiusKm} km da ({Lat}, {Lng})",
-                    response.Data.Count, radiusKm, latitude, longitude);
+                    response.Data.Cats.Count, radiusKm, latitude, longitude);
+                
+                // Restituisce solo la lista dei gatti
+                return new ApiResponse<List<Cat>>
+                {
+                    Success = true,
+                    Message = response.Message,
+                    Data = response.Data.Cats,
+                    StatusCode = response.StatusCode
+                };
             }
 
-            return response;
+            return new ApiResponse<List<Cat>>
+            {
+                Success = false,
+                Message = response.Message,
+                Errors = response.Errors,
+                StatusCode = response.StatusCode,
+                Data = new List<Cat>()
+            };
         }
         catch (Exception ex)
         {
@@ -264,15 +297,31 @@ public class CatService : ApiService, ICatService
             };
 
             var endpoint = AppSettings.Api.Endpoints.CatsSearch;
-            var response = await GetAsync<List<Cat>>(endpoint, queryParams, "SearchCats API");
+            var response = await GetAsync<CatsApiResponse>(endpoint, queryParams, "SearchCats API");
 
             if (response.Success && response.Data != null)
             {
                 Logger?.LogInformation("Trovati {Count} gatti per ricerca: '{SearchTerm}'",
-                    response.Data.Count, searchTerm);
+                    response.Data.Cats.Count, searchTerm);
+                
+                // Restituisce solo la lista dei gatti
+                return new ApiResponse<List<Cat>>
+                {
+                    Success = true,
+                    Message = response.Message,
+                    Data = response.Data.Cats,
+                    StatusCode = response.StatusCode
+                };
             }
 
-            return response;
+            return new ApiResponse<List<Cat>>
+            {
+                Success = false,
+                Message = response.Message,
+                Errors = response.Errors,
+                StatusCode = response.StatusCode,
+                Data = new List<Cat>()
+            };
         }
         catch (Exception ex)
         {
