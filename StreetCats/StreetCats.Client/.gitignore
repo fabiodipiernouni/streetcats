@@ -128,6 +128,8 @@ nunit-*.xml
 
 # exclude secrets and config
 appsettings.Development.json
+appsettings.Integration.json
+appsettings.Production.json
 secrets.json
 
 ## Editor backup files
