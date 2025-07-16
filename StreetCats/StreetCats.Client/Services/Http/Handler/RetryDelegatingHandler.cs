@@ -50,7 +50,7 @@ public class RetryDelegatingHandler : DelegatingHandler
         // Check circuit breaker
         if (IsCircuitBreakerOpen())
         {
-            _logger?.LogWarning("⚡ Circuit breaker OPEN - richiesta bloccata per {Url}", request.RequestUri);
+            _logger?.LogWarning("Circuit breaker OPEN - richiesta bloccata per {Url}", request.RequestUri);
             throw new ApiException("Servizio temporaneamente non disponibile (circuit breaker)", 503, isRetryable: false);
         }
 
@@ -73,7 +73,7 @@ public class RetryDelegatingHandler : DelegatingHandler
 
                     if (attempt > 0)
                     {
-                        _logger?.LogInformation("✅ Richiesta riuscita al tentativo {Attempt} per {Url}",
+                        _logger?.LogInformation("Richiesta riuscita al tentativo {Attempt} per {Url}",
                             attempt + 1, request.RequestUri);
                     }
 
@@ -83,7 +83,7 @@ public class RetryDelegatingHandler : DelegatingHandler
                 // Errore HTTP - verifica se è retry-able
                 if (!_exceptionHandler.IsRetryableStatusCode(response.StatusCode))
                 {
-                    _logger?.LogWarning("❌ Status {StatusCode} non retry-able per {Url}",
+                    _logger?.LogWarning("Status {StatusCode} non retry-able per {Url}",
                         response.StatusCode, request.RequestUri);
                     return response;
                 }
@@ -95,7 +95,7 @@ public class RetryDelegatingHandler : DelegatingHandler
                 {
                     var delay = _appSettings.Api.GetRetryDelay(attempt);
 
-                    _logger?.LogWarning("🔄 Tentativo {Attempt}/{MaxRetries} fallito con {StatusCode} per {Url} - retry tra {Delay}ms",
+                    _logger?.LogWarning("Tentativo {Attempt}/{MaxRetries} fallito con {StatusCode} per {Url} - retry tra {Delay}ms",
                         attempt + 1, maxRetries + 1, response.StatusCode, request.RequestUri, delay.TotalMilliseconds);
 
                     await Task.Delay(delay, cancellationToken);
@@ -108,7 +108,7 @@ public class RetryDelegatingHandler : DelegatingHandler
                 // Verifica se l'errore è retry-able
                 if (!_exceptionHandler.IsRetryableError(ex))
                 {
-                    _logger?.LogWarning("❌ Errore {ErrorType} non retry-able per {Url}: {Message}",
+                    _logger?.LogWarning("Errore {ErrorType} non retry-able per {Url}: {Message}",
                         ex.GetType().Name, request.RequestUri, ex.Message);
                     throw;
                 }
@@ -118,7 +118,7 @@ public class RetryDelegatingHandler : DelegatingHandler
                 {
                     var delay = _appSettings.Api.GetRetryDelay(attempt);
 
-                    _logger?.LogWarning("🔄 Tentativo {Attempt}/{MaxRetries} fallito con {ErrorType} per {Url} - retry tra {Delay}ms: {Message}",
+                    _logger?.LogWarning("Tentativo {Attempt}/{MaxRetries} fallito con {ErrorType} per {Url} - retry tra {Delay}ms: {Message}",
                         attempt + 1, maxRetries + 1, ex.GetType().Name, request.RequestUri, delay.TotalMilliseconds, ex.Message);
 
                     try
@@ -140,14 +140,14 @@ public class RetryDelegatingHandler : DelegatingHandler
         // Rilancia ultima eccezione o ritorna ultima risposta
         if (lastException != null)
         {
-            _logger?.LogError("❌ Tutti i {MaxRetries} retry falliti per {Url}: {ErrorType} - {Message}",
+            _logger?.LogError("Tutti i {MaxRetries} retry falliti per {Url}: {ErrorType} - {Message}",
                 maxRetries + 1, request.RequestUri, lastException.GetType().Name, lastException.Message);
             throw lastException;
         }
 
         if (lastResponse != null)
         {
-            _logger?.LogError("❌ Tutti i {MaxRetries} retry falliti per {Url}: Status {StatusCode}",
+            _logger?.LogError("Tutti i {MaxRetries} retry falliti per {Url}: Status {StatusCode}",
                 maxRetries + 1, request.RequestUri, lastResponse.StatusCode);
             return lastResponse;
         }
@@ -212,7 +212,7 @@ public class RetryDelegatingHandler : DelegatingHandler
         // Se è passato abbastanza tempo, prova a riaprire il circuito
         if (timeSinceLastFailure >= _circuitBreakerTimeout)
         {
-            _logger?.LogInformation("🔧 Circuit breaker timeout scaduto - tentativo di riapertura");
+            _logger?.LogInformation("Circuit breaker timeout scaduto - tentativo di riapertura");
             _consecutiveFailures = _circuitBreakerThreshold - 1; // Lascia una chance
             return false;
         }
@@ -230,7 +230,7 @@ public class RetryDelegatingHandler : DelegatingHandler
 
         if (_consecutiveFailures >= _circuitBreakerThreshold)
         {
-            _logger?.LogWarning("⚡ Circuit breaker APERTO dopo {Failures} fallimenti consecutivi - timeout: {Timeout}",
+            _logger?.LogWarning("Circuit breaker APERTO dopo {Failures} fallimenti consecutivi - timeout: {Timeout}",
                 _consecutiveFailures, _circuitBreakerTimeout);
         }
     }
@@ -242,7 +242,7 @@ public class RetryDelegatingHandler : DelegatingHandler
     {
         if (_consecutiveFailures > 0)
         {
-            _logger?.LogInformation("✅ Circuit breaker RESET dopo successo (era a {Failures} fallimenti)",
+            _logger?.LogInformation("Circuit breaker RESET dopo successo (era a {Failures} fallimenti)",
                 _consecutiveFailures);
             _consecutiveFailures = 0;
         }

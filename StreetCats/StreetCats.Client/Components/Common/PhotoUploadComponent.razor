@@ -3,14 +3,16 @@
 @using System.Text.Json
 @inject IJSRuntime JSRuntime
 @inject ILogger<PhotoUploadComponent> Logger
-@inject IConfiguration Configuration
 
 <div class="photo-upload-component">
     <!-- Area di Drop e Selezione File -->
     <div class="upload-area @(isDragOver ? "drag-over" : "") @(isUploading ? "uploading" : "")"
          @ondrop="OnDrop"
+         @ondrop:preventDefault="true"
          @ondragover="OnDragOver"
+         @ondragover:preventDefault="true" 
          @ondragenter="OnDragEnter"
+         @ondragenter:preventDefault="true"
          @ondragleave="OnDragLeave"
          @onclick="TriggerFileInput">
         
@@ -79,7 +81,7 @@
     {
         <div class="file-info">
             <small class="text-muted">
-                📎 @fileName
+                @fileName
                 @if (fileSize > 0)
                 {
                     <span> • @FormatFileSize(fileSize)</span>
@@ -96,6 +98,7 @@
     [Parameter] public EventCallback OnUploadError { get; set; }
     [Parameter] public bool IsRequired { get; set; } = false;
     [Parameter] public int MaxFileSizeMB { get; set; } = 5;
+    [Parameter] public string ApiBaseUrl { get; set; } = "http://localhost:3000/api";
 
     private InputFile? fileInput;
     private bool isDragOver = false;
@@ -105,14 +108,18 @@
     private string? fileName;
     private long fileSize = 0;
 
-    // Configurazione API
-    private string apiBaseUrl => Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:3000/api";
-    private string uploadEndpoint => $"{apiBaseUrl}/upload/images";
+    private string uploadEndpoint => $"{ApiBaseUrl}/upload/images";
 
     protected override async Task OnInitializedAsync()
     {
-        // Setup JavaScript interop per drag & drop avanzato
-        await JSRuntime.InvokeVoidAsync("StreetCatsInterop.initializePhotoUpload", DotNetObjectReference.Create(this));
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.initializePhotoUpload", DotNetObjectReference.Create(this));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Impossibile inizializzare JavaScript interop per upload foto");
+        }
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e)
@@ -133,7 +140,7 @@
             var validationResult = ValidateFile(file);
             if (!validationResult.IsValid)
             {
-                ShowError(validationResult.ErrorMessage);
+                ShowError(validationResult.ErrorMessage ?? "File non valido");
                 return;
             }
 
@@ -152,7 +159,7 @@
                 await PhotoUrlChanged.InvokeAsync(PhotoUrl);
                 await OnUploadCompleted.InvokeAsync(result);
                 
-                Logger.LogInformation("✅ Foto caricata con successo: {PhotoUrl}", result.PhotoUrl);
+                Logger.LogInformation("Foto caricata con successo: {PhotoUrl}", result.PhotoUrl);
             }
             else
             {
@@ -162,7 +169,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "❌ Errore upload foto");
+            Logger.LogError(ex, "Errore upload foto");
             ShowError("Errore imprevisto durante caricamento");
             await OnUploadError.InvokeAsync();
         }
@@ -178,13 +185,27 @@
     {
         try
         {
-            // Prepara FormData usando JavaScript
-            var fileInfo = await JSRuntime.InvokeAsync<string>("StreetCatsInterop.uploadPhoto", 
+            // Crea FormData usando JavaScript Interop
+            var fileStream = file.OpenReadStream(maxAllowedSize: MaxFileSizeMB * 1024 * 1024);
+            var buffer = new byte[file.Size];
+            await fileStream.ReadAsync(buffer);
+
+            var base64Data = Convert.ToBase64String(buffer);
+            
+            var uploadData = new
+            {
+                fileName = file.Name,
+                contentType = file.ContentType,
+                size = file.Size,
+                data = base64Data
+            };
+
+            var response = await JSRuntime.InvokeAsync<string>("StreetCatsInterop.uploadPhotoFromBlazor", 
                 uploadEndpoint, 
-                DotNetObjectReference.Create(file),
+                uploadData,
                 DotNetObjectReference.Create(this));
 
-            var result = JsonSerializer.Deserialize<ApiResponse<PhotoUploadData>>(fileInfo, 
+            var result = JsonSerializer.Deserialize<ApiResponse<PhotoUploadData>>(response, 
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             if (result?.Success == true && result.Data != null)
@@ -209,7 +230,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "❌ Errore chiamata API upload");
+            Logger.LogError(ex, "Errore chiamata API upload");
             return new PhotoUploadResult
             {
                 Success = false,
@@ -219,10 +240,10 @@
     }
 
     [JSInvokable]
-    public void UpdateUploadProgress(int progress)
+    public async Task UpdateUploadProgress(int progress)
     {
         uploadProgress = progress;
-        InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
     }
 
     private FileValidationResult ValidateFile(IBrowserFile file)
@@ -260,7 +281,7 @@
         }
 
         // Se è un path relativo, costruisci URL completo
-        var baseUrl = apiBaseUrl.Replace("/api", "");
+        var baseUrl = ApiBaseUrl.Replace("/api", "");
         return $"{baseUrl}{PhotoUrl}";
     }
 
@@ -279,41 +300,66 @@
     {
         if (fileInput != null && !isUploading)
         {
-            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.triggerFileInput", fileInput.Element);
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("StreetCatsInterop.triggerFileInput", fileInput.Element);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Impossibile attivare selezione file");
+            }
         }
     }
 
-    // Drag & Drop Event Handlers
-    private void OnDragOver(DragEventArgs e) => e.preventDefault();
-    private void OnDragEnter(DragEventArgs e) { isDragOver = true; StateHasChanged(); }
-    private void OnDragLeave(DragEventArgs e) { isDragOver = false; StateHasChanged(); }
+    // Event handlers per drag & drop (Blazor non supporta preventDefault in C#)
+    private void OnDragOver() 
+    { 
+        // Il preventDefault è gestito dall'attributo del div
+    }
+    
+    private void OnDragEnter() 
+    { 
+        isDragOver = true; 
+        StateHasChanged(); 
+    }
+    
+    private void OnDragLeave() 
+    { 
+        isDragOver = false; 
+        StateHasChanged(); 
+    }
 
-    private async Task OnDrop(DragEventArgs e)
+    private async Task OnDrop()
     {
         isDragOver = false;
         StateHasChanged();
 
-        // Gestito via JavaScript per accesso ai file
-        await JSRuntime.InvokeVoidAsync("StreetCatsInterop.handleFileDrop", 
-            DotNetObjectReference.Create(this));
+        try
+        {
+            // Il drop è gestito via JavaScript
+            await JSRuntime.InvokeVoidAsync("StreetCatsInterop.handleFileDrop", 
+                DotNetObjectReference.Create(this));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Errore gestione drop file");
+        }
     }
 
     [JSInvokable]
     public async Task HandleDroppedFile(string fileName, string contentType, long size, string base64Data)
     {
-        try
-        {
-            // Simula IBrowserFile per processamento
-            var fileData = Convert.FromBase64String(base64Data);
-            // TODO: Implementare wrapper per IBrowserFile da dati raw
-            // Per ora, mostra messaggio informativo
-            ShowError("Drag & drop implementato - usa click per selezionare file");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "❌ Errore gestione file drag & drop");
-            ShowError("Errore elaborazione file trascinato");
-        }
+        await Task.Run(() => {
+            try
+            {
+                ShowError("Drag & drop non ancora implementato - usa click per selezionare file");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Errore gestione file drag & drop");
+                ShowError("Errore elaborazione file trascinato");
+            }
+        });
     }
 
     private void ShowError(string message)
@@ -362,190 +408,3 @@
 
     private record FileValidationResult(bool IsValid, string? ErrorMessage);
 }
-
-<style>
-.photo-upload-component {
-    width: 100%;
-    max-width: 400px;
-}
-
-.upload-area {
-    border: 2px dashed #d1d5db;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: #f9fafb;
-    position: relative;
-    overflow: hidden;
-}
-
-.upload-area:hover {
-    border-color: #6366f1;
-    background: #f0f9ff;
-}
-
-.upload-area.drag-over {
-    border-color: #10b981;
-    background: #ecfdf5;
-    transform: scale(1.02);
-}
-
-.upload-area.uploading {
-    pointer-events: none;
-    opacity: 0.8;
-}
-
-.upload-placeholder {
-    color: #6b7280;
-}
-
-.upload-icon {
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 1rem;
-    color: #9ca3af;
-}
-
-.upload-text {
-    margin: 0.5rem 0;
-    font-size: 1rem;
-}
-
-.upload-hint {
-    font-size: 0.875rem;
-    color: #9ca3af;
-    margin: 0;
-}
-
-.upload-progress {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-}
-
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #e5e7eb;
-    border-top: 4px solid #6366f1;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.progress-bar {
-    width: 100%;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-
-.progress-text {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #6366f1;
-}
-
-.photo-preview {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.preview-image {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    display: block;
-}
-
-.photo-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.photo-preview:hover .photo-overlay {
-    opacity: 1;
-}
-
-.btn-change, .btn-remove {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-change {
-    background: #6366f1;
-    color: white;
-}
-
-.btn-change:hover {
-    background: #5856eb;
-}
-
-.btn-remove {
-    background: #ef4444;
-    color: white;
-}
-
-.btn-remove:hover {
-    background: #dc2626;
-}
-
-.error-message {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    margin-top: 1rem;
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
-    border-radius: 6px;
-    font-size: 0.875rem;
-}
-
-.error-icon {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
-
-.file-info {
-    margin-top: 0.5rem;
-    text-align: left;
-}
-
-.text-muted {
-    color: #6b7280;
-}
-</style>

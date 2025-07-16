@@ -78,29 +78,29 @@ public class AuthService : ApiService, IAuthService
                             _token = savedToken;
                             _currentUser = savedUser;
 
-                            Logger?.LogInformation("✅ Sessione ripristinata per utente: {Username}", savedUser.Username);
+                            Logger?.LogInformation("Sessione ripristinata per utente: {Username}", savedUser.Username);
                             AuthenticationStateChanged?.Invoke(true);
                             return;
                         }
                         else
                         {
-                            Logger?.LogWarning("⚠️ Token salvato non valido - cleanup necessario");
+                            Logger?.LogWarning("Token salvato non valido - cleanup necessario");
                         }
                     }
                 }
                 catch (JsonException ex)
                 {
-                    Logger?.LogWarning(ex, "⚠️ Errore deserializzazione dati utente salvati");
+                    Logger?.LogWarning(ex, "Errore deserializzazione dati utente salvati");
                 }
             }
 
             // Se arriviamo qui, non c'è sessione valida
             await LogoutAsync();
-            Logger?.LogInformation("🔓 Nessuna sessione valida trovata");
+            Logger?.LogInformation("Nessuna sessione valida trovata");
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante inizializzazione auth");
+            Logger?.LogError(ex, "Errore durante inizializzazione auth");
             await LogoutAsync(); // Cleanup in caso di errore
         }
     }
@@ -135,7 +135,7 @@ public class AuthService : ApiService, IAuthService
                 _token = response.Data.Token;
                 _currentUser = response.Data.User;
 
-                Logger?.LogInformation("✅ Login riuscito per utente: {Username}", request.Username);
+                Logger?.LogInformation("Login riuscito per utente: {Username}", request.Username);
                 AuthenticationStateChanged?.Invoke(true);
             }
 
@@ -143,7 +143,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante login per utente: {Username}", request.Username);
+            Logger?.LogError(ex, "Errore durante login per utente: {Username}", request.Username);
             return ExceptionHandler.HandleException<AuthResponse>(ex, "Login");
         }
     }
@@ -176,7 +176,7 @@ public class AuthService : ApiService, IAuthService
                 _token = response.Data.Token;
                 _currentUser = response.Data.User;
 
-                Logger?.LogInformation("✅ Registrazione riuscita per utente: {Username}", request.Username);
+                Logger?.LogInformation("Registrazione riuscita per utente: {Username}", request.Username);
                 AuthenticationStateChanged?.Invoke(true);
             }
 
@@ -184,7 +184,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante registrazione per utente: {Username}", request.Username);
+            Logger?.LogError(ex, "Errore durante registrazione per utente: {Username}", request.Username);
             return ExceptionHandler.HandleException<AuthResponse>(ex, "Register");
         }
     }
@@ -196,7 +196,7 @@ public class AuthService : ApiService, IAuthService
     {
         try
         {
-            Logger?.LogInformation("🚪 Logout utente: {Username}", _currentUser?.Username ?? "sconosciuto");
+            Logger?.LogInformation("Logout utente: {Username}", _currentUser?.Username ?? "sconosciuto");
 
             // Pulizia stato locale
             _token = null;
@@ -210,11 +210,11 @@ public class AuthService : ApiService, IAuthService
             // Notifica cambiamento stato
             AuthenticationStateChanged?.Invoke(false);
 
-            Logger?.LogInformation("✅ Logout completato");
+            Logger?.LogInformation("Logout completato");
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore durante logout");
+            Logger?.LogError(ex, "Errore durante logout");
         }
     }
 
@@ -262,7 +262,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "⚠️ Errore validazione token");
+            Logger?.LogWarning(ex, "Errore validazione token");
             return false;
         }
     }
@@ -282,11 +282,11 @@ public class AuthService : ApiService, IAuthService
                 await SaveToLocalStorageAsync(REFRESH_TOKEN_KEY, authResponse.RefreshToken);
             }
 
-            Logger?.LogDebug("💾 Stato autenticazione salvato in localStorage");
+            Logger?.LogDebug("Stato autenticazione salvato in localStorage");
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "⚠️ Errore salvataggio stato auth in localStorage");
+            Logger?.LogWarning(ex, "Errore salvataggio stato auth in localStorage");
         }
     }
 
@@ -359,7 +359,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "⚠️ Errore salvataggio localStorage per chiave: {Key}", key);
+            Logger?.LogWarning(ex, "Errore salvataggio localStorage per chiave: {Key}", key);
         }
     }
 
@@ -386,7 +386,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "⚠️ Errore lettura localStorage per chiave: {Key}", key);
+            Logger?.LogWarning(ex, "Errore lettura localStorage per chiave: {Key}", key);
             return default;
         }
     }
@@ -402,7 +402,7 @@ public class AuthService : ApiService, IAuthService
         }
         catch (Exception ex)
         {
-            Logger?.LogWarning(ex, "⚠️ Errore rimozione localStorage per chiave: {Key}", key);
+            Logger?.LogWarning(ex, "Errore rimozione localStorage per chiave: {Key}", key);
         }
     }
 

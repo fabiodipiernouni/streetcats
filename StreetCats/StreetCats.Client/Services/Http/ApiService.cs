@@ -49,14 +49,14 @@ public abstract class ApiService
 
         try
         {
-            Logger?.LogDebug("🔵 {Operation} - inizio", operationName);
+            Logger?.LogDebug("{Operation} - inizio", operationName);
 
             var response = await HttpClient.GetAsync(endpoint);
             return await ProcessResponseAsync<T>(response, operationName);
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
+            Logger?.LogError(ex, "{Operation} - errore", operationName);
             return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
@@ -92,7 +92,7 @@ public abstract class ApiService
 
         try
         {
-            Logger?.LogDebug("🟡 {Operation} - inizio", operationName);
+            Logger?.LogDebug("{Operation} - inizio", operationName);
 
             HttpResponseMessage response;
 
@@ -109,7 +109,7 @@ public abstract class ApiService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
+            Logger?.LogError(ex, "{Operation} - errore", operationName);
             return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
@@ -123,14 +123,14 @@ public abstract class ApiService
 
         try
         {
-            Logger?.LogDebug("🟡 {Operation} - inizio con content personalizzato", operationName);
+            Logger?.LogDebug("{Operation} - inizio con content personalizzato", operationName);
 
             var response = await HttpClient.PostAsync(endpoint, content);
             return await ProcessResponseAsync<T>(response, operationName);
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
+            Logger?.LogError(ex, "{Operation} - errore", operationName);
             return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
@@ -148,14 +148,14 @@ public abstract class ApiService
 
         try
         {
-            Logger?.LogDebug("🟠 {Operation} - inizio", operationName);
+            Logger?.LogDebug("{Operation} - inizio", operationName);
 
             var response = await HttpClient.PutAsJsonAsync(endpoint, payload);
             return await ProcessResponseAsync<T>(response, operationName);
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
+            Logger?.LogError(ex, "{Operation} - errore", operationName);
             return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
@@ -173,14 +173,14 @@ public abstract class ApiService
 
         try
         {
-            Logger?.LogDebug("🔴 {Operation} - inizio", operationName);
+            Logger?.LogDebug("{Operation} - inizio", operationName);
 
             var response = await HttpClient.DeleteAsync(endpoint);
             return await ProcessResponseAsync<T>(response, operationName);
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ {Operation} - errore", operationName);
+            Logger?.LogError(ex, "{Operation} - errore", operationName);
             return ExceptionHandler.HandleException<T>(ex, operationName);
         }
     }
@@ -273,7 +273,7 @@ public abstract class ApiService
         }
         catch (JsonException jsonEx)
         {
-            Logger?.LogError(jsonEx, "❌ Errore deserializzazione JSON per {Operation}", operation);
+            Logger?.LogError(jsonEx, "Errore deserializzazione JSON per {Operation}", operation);
 
             return new ApiResponse<T>
             {
@@ -285,7 +285,7 @@ public abstract class ApiService
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex, "❌ Errore processing risposta per {Operation}", operation);
+            Logger?.LogError(ex, "Errore processing risposta per {Operation}", operation);
             return ExceptionHandler.HandleException<T>(ex, operation);
         }
     }
@@ -374,12 +374,12 @@ public abstract class ApiService
     {
         if (parameters != null)
         {
-            Logger?.LogDebug("🚀 {Operation} - inizio con parametri: {Parameters}",
+            Logger?.LogDebug("{Operation} - inizio con parametri: {Parameters}",
                 operation, JsonSerializer.Serialize(parameters, GetJsonOptions()));
         }
         else
         {
-            Logger?.LogDebug("🚀 {Operation} - inizio", operation);
+            Logger?.LogDebug("{Operation} - inizio", operation);
         }
     }
 
@@ -390,12 +390,12 @@ public abstract class ApiService
     {
         if (result != null)
         {
-            Logger?.LogDebug("✅ {Operation} - successo: {Result}",
+            Logger?.LogDebug("{Operation} - successo: {Result}",
                 operation, JsonSerializer.Serialize(result, GetJsonOptions()));
         }
         else
         {
-            Logger?.LogDebug("✅ {Operation} - successo", operation);
+            Logger?.LogDebug("{Operation} - successo", operation);
         }
     }
 

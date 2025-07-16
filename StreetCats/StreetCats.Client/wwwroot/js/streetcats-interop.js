@@ -1,5 +1,6 @@
 /**
  * StreetCats JavaScript Interop
+ * Enhanced with Photo Upload Integration
  */
 
 window.StreetCatsInterop = {
@@ -18,7 +19,7 @@ window.StreetCatsInterop = {
      * Initialize photo upload component
      */
     initializePhotoUpload: function (componentRef) {
-        console.log('📸 Initializing photo upload component');
+        console.log('Initializing photo upload component');
 
         // Store component reference for callbacks
         this.config.photoUploadComponent = componentRef;
@@ -30,29 +31,24 @@ window.StreetCatsInterop = {
     },
 
     /**
-     * Upload photo to backend using FormData and fetch
+     * Upload photo from Blazor component (base64 data)
      */
-    uploadPhoto: async function (uploadUrl, fileReference, progressCallback) {
+    uploadPhotoFromBlazor: async function (uploadUrl, uploadData, progressCallback) {
         try {
-            console.log('📤 Starting photo upload to:', uploadUrl);
+            console.log('Starting photo upload from Blazor to:', uploadUrl);
 
-            // Get file from Blazor InputFile element
-            const fileInput = fileReference.element || fileReference;
-            const file = fileInput.files[0];
-
-            if (!file) {
-                throw new Error('No file selected');
+            // Convert base64 to blob
+            const byteCharacters = atob(uploadData.data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
             }
-
-            // Validate file
-            const validation = this.validateImageFile(file);
-            if (!validation.isValid) {
-                throw new Error(validation.error);
-            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: uploadData.contentType });
 
             // Create FormData
             const formData = new FormData();
-            formData.append('photo', file);
+            formData.append('photo', blob, uploadData.fileName);
 
             // Get auth token
             const token = this.getAuthToken();
@@ -72,12 +68,12 @@ window.StreetCatsInterop = {
             }
 
             const result = await response.json();
-            console.log('✅ Photo upload successful:', result);
+            console.log('Photo upload from Blazor successful:', result);
 
             return JSON.stringify(result);
 
         } catch (error) {
-            console.error('❌ Photo upload failed:', error);
+            console.error('Photo upload from Blazor failed:', error);
             throw error;
         }
     },
@@ -97,7 +93,7 @@ window.StreetCatsInterop = {
                         try {
                             progressCallback.invokeMethodAsync('UpdateUploadProgress', percentComplete);
                         } catch (err) {
-                            console.warn('⚠️ Progress callback failed:', err);
+                            console.warn('Progress callback failed:', err);
                         }
                     }
                 });
@@ -170,7 +166,7 @@ window.StreetCatsInterop = {
 
                 const file = item.getAsFile();
                 if (file) {
-                    console.log('📋 Image pasted from clipboard:', file.name || 'clipboard-image');
+                    console.log('Image pasted from clipboard:', file.name || 'clipboard-image');
 
                     // Convert to base64 and send to Blazor component
                     this.fileToBase64(file)
@@ -183,7 +179,7 @@ window.StreetCatsInterop = {
                             );
                         })
                         .catch(err => {
-                            console.error('❌ Error processing pasted image:', err);
+                            console.error('Error processing pasted image:', err);
                         });
                 }
                 break;
@@ -197,7 +193,7 @@ window.StreetCatsInterop = {
     handleFileDrop: function (componentRef) {
         // This is called after ondrop event in Blazor
         // File data is handled by browser's drag & drop API
-        console.log('📥 File drop handled by Blazor component');
+        console.log('File drop handled by Blazor component');
         return true;
     },
 
@@ -226,7 +222,7 @@ window.StreetCatsInterop = {
     },
 
     // ========================================
-    // 🔐 AUTHENTICATION HELPERS
+    // AUTHENTICATION HELPERS
     // ========================================
 
     /**
@@ -236,7 +232,7 @@ window.StreetCatsInterop = {
         try {
             return localStorage.getItem('streetcats_token') || null;
         } catch (error) {
-            console.warn('⚠️ Cannot access localStorage for auth token');
+            console.warn('Cannot access localStorage for auth token');
             return null;
         }
     },
@@ -253,14 +249,14 @@ window.StreetCatsInterop = {
                 localStorage.removeItem('streetcats_token');
                 this.config.authToken = null;
             }
-            console.log('🔐 Auth token updated');
+            console.log('Auth token updated');
         } catch (error) {
-            console.warn('⚠️ Cannot store auth token in localStorage');
+            console.warn('Cannot store auth token in localStorage');
         }
     },
 
     // ========================================
-    // 🗺️ MAP FUNCTIONS (Existing)
+    // MAP FUNCTIONS (Existing)
     // ========================================
 
     /**
@@ -270,7 +266,7 @@ window.StreetCatsInterop = {
         try {
             // Check if Leaflet is loaded
             if (typeof L === 'undefined') {
-                console.error('❌ Leaflet library not loaded');
+                console.error('Leaflet library not loaded');
                 return false;
             }
 
@@ -291,11 +287,11 @@ window.StreetCatsInterop = {
             // Store map instance
             this.config.mapInstances.set(mapId, map);
 
-            console.log(`✅ Map initialized: ${mapId} at (${latitude}, ${longitude})`);
+            console.log(`Map initialized: ${mapId} at (${latitude}, ${longitude})`);
             return true;
 
         } catch (error) {
-            console.error('❌ Map initialization failed:', error);
+            console.error('Map initialization failed:', error);
             return false;
         }
     },
@@ -307,7 +303,7 @@ window.StreetCatsInterop = {
         try {
             const map = this.config.mapInstances.get(mapId);
             if (!map) {
-                console.error(`❌ Map not found: ${mapId}`);
+                console.error(`Map not found: ${mapId}`);
                 return false;
             }
 
@@ -328,11 +324,11 @@ window.StreetCatsInterop = {
                 marker.bindTooltip(title);
             }
 
-            console.log(`📍 Marker added to ${mapId}: ${title}`);
+            console.log(`Marker added to ${mapId}: ${title}`);
             return true;
 
         } catch (error) {
-            console.error('❌ Add marker failed:', error);
+            console.error('Add marker failed:', error);
             return false;
         }
     },
@@ -365,7 +361,7 @@ window.StreetCatsInterop = {
                     align-items: center;
                     justify-content: center;
                 ">
-                    <span style="color: white; font-size: 14px;">🐱</span>
+                    <span style="color: white; font-size: 14px;">CAT</span>
                 </div>
             `,
             iconSize: [30, 30],
@@ -388,17 +384,17 @@ window.StreetCatsInterop = {
                 }
             });
 
-            console.log(`🧹 Markers cleared from ${mapId}`);
+            console.log(`Markers cleared from ${mapId}`);
             return true;
 
         } catch (error) {
-            console.error('❌ Clear markers failed:', error);
+            console.error('Clear markers failed:', error);
             return false;
         }
     },
 
     // ========================================
-    // 📍 GEOLOCATION FUNCTIONS
+    // GEOLOCATION FUNCTIONS
     // ========================================
 
     /**
@@ -426,11 +422,11 @@ window.StreetCatsInterop = {
                         timestamp: new Date().toISOString()
                     };
 
-                    console.log('📍 Location obtained:', result);
+                    console.log('Location obtained:', result);
                     resolve(result);
                 },
                 error => {
-                    console.error('❌ Geolocation error:', error);
+                    console.error('Geolocation error:', error);
 
                     // Provide fallback location (Naples center)
                     const fallback = {
@@ -440,7 +436,7 @@ window.StreetCatsInterop = {
                         timestamp: new Date().toISOString()
                     };
 
-                    console.log('🏛️ Using fallback location (Naples)');
+                    console.log('Using fallback location (Naples)');
                     resolve(fallback);
                 },
                 options
@@ -449,7 +445,7 @@ window.StreetCatsInterop = {
     },
 
     // ========================================
-    // 🔧 UTILITY FUNCTIONS
+    // UTILITY FUNCTIONS
     // ========================================
 
     /**
@@ -502,14 +498,14 @@ window.StreetCatsInterop = {
      * Log debug info
      */
     logDebug: function (message, data = null) {
-        console.log(`🐱 StreetCats: ${message}`, data || '');
+        console.log(`StreetCats: ${message}`, data || '');
     },
 
     /**
      * Initialize all StreetCats components
      */
     initialize: function () {
-        console.log('🚀 StreetCats JavaScript Interop initialized');
+        console.log('StreetCats JavaScript Interop initialized');
 
         // Check for required libraries
         const checks = {
@@ -519,7 +515,7 @@ window.StreetCatsInterop = {
             fileApi: 'File' in window && 'FileReader' in window
         };
 
-        console.log('📋 Environment checks:', checks);
+        console.log('Environment checks:', checks);
 
         return checks;
     },

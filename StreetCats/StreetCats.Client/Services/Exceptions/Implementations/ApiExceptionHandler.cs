@@ -26,7 +26,7 @@ public class ApiExceptionHandler : IApiExceptionHandler
         var context = string.IsNullOrEmpty(operation) ? "Operazione API" : operation;
 
         // Log dell'errore
-        _logger?.LogError(exception, "❌ Errore durante {Operation}: {Message}", context, exception.Message);
+        _logger?.LogError(exception, "Errore durante {Operation}: {Message}", context, exception.Message);
 
         return exception switch
         {
@@ -50,7 +50,7 @@ public class ApiExceptionHandler : IApiExceptionHandler
         {
             var content = await response.Content.ReadAsStringAsync();
 
-            _logger?.LogWarning("⚠️ HTTP {StatusCode} durante {Operation}: {Content}",
+            _logger?.LogWarning("HTTP {StatusCode} durante {Operation}: {Content}",
                 response.StatusCode, context, content);
 
             // Prova a deserializzare una risposta di errore strutturata
@@ -89,7 +89,7 @@ public class ApiExceptionHandler : IApiExceptionHandler
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "❌ Errore durante parsing risposta di errore per {Operation}", context);
+            _logger?.LogError(ex, "Errore durante parsing risposta di errore per {Operation}", context);
 
             return new ApiResponse<T>
             {

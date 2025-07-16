@@ -45,7 +45,7 @@ public class MapService : IMapService
     {
         try
         {
-            _logger?.LogDebug("📍 Richiesta posizione corrente...");
+            _logger?.LogDebug("Richiesta posizione corrente...");
 
             // Usa JavaScript Interop per geolocalizzazione
             var position = await _jsRuntime.InvokeAsync<GeolocationResult>("StreetCatsInterop.getCurrentLocation");
@@ -61,18 +61,18 @@ public class MapService : IMapService
                     PostalCode = ""
                 };
 
-                _logger?.LogInformation("✅ Posizione ottenuta: {Lat}, {Lng} (precisione: {Accuracy}m)",
+                _logger?.LogInformation("Posizione ottenuta: {Lat}, {Lng} (precisione: {Accuracy}m)",
                     position.Latitude, position.Longitude, position.Accuracy);
 
                 return location;
             }
 
-            _logger?.LogWarning("⚠️ Geolocalizzazione non disponibile");
+            _logger?.LogWarning("Geolocalizzazione non disponibile");
             return null;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "❌ Errore durante geolocalizzazione");
+            _logger?.LogError(ex, "Errore durante geolocalizzazione");
 
             // Fallback: restituisci posizione default (centro Napoli)
             return GetDefaultNaplesLocation();
@@ -86,7 +86,7 @@ public class MapService : IMapService
     {
         try
         {
-            _logger?.LogDebug("🔍 Geocoding inverso per: {Lat}, {Lng}", latitude, longitude);
+            _logger?.LogDebug("Geocoding inverso per: {Lat}, {Lng}", latitude, longitude);
 
             // Rispetta rate limit di Nominatim
             await EnsureNominatimRateLimit();
@@ -103,17 +103,17 @@ public class MapService : IMapService
                 if (nominatimResponse != null && !string.IsNullOrEmpty(nominatimResponse.DisplayName))
                 {
                     var address = FormatNominatimAddress(nominatimResponse);
-                    _logger?.LogInformation("✅ Indirizzo trovato: {Address}", address);
+                    _logger?.LogInformation("Indirizzo trovato: {Address}", address);
                     return address;
                 }
             }
 
-            _logger?.LogWarning("⚠️ Geocoding inverso fallito per: {Lat}, {Lng}", latitude, longitude);
+            _logger?.LogWarning("Geocoding inverso fallito per: {Lat}, {Lng}", latitude, longitude);
             return $"Posizione: {latitude:F6}, {longitude:F6}";
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "❌ Errore geocoding inverso per: {Lat}, {Lng}", latitude, longitude);
+            _logger?.LogError(ex, "Errore geocoding inverso per: {Lat}, {Lng}", latitude, longitude);
             return $"Posizione: {latitude:F6}, {longitude:F6}";
         }
     }
@@ -136,7 +136,7 @@ public class MapService : IMapService
 
         var distance = earthRadiusKm * c;
 
-        _logger?.LogDebug("📏 Distanza calcolata: {Distance:F2} km tra ({Lat1}, {Lon1}) e ({Lat2}, {Lon2})",
+        _logger?.LogDebug("Distanza calcolata: {Distance:F2} km tra ({Lat1}, {Lon1}) e ({Lat2}, {Lon2})",
             distance, lat1, lon1, lat2, lon2);
 
         return distance;
@@ -150,7 +150,7 @@ public class MapService : IMapService
         var distance = CalculateDistance(centerLat, centerLon, pointLat, pointLon);
         var isInRadius = distance <= radiusKm;
 
-        _logger?.LogDebug("🎯 Punto ({PointLat}, {PointLon}) è {Status} dal centro ({CenterLat}, {CenterLon}) con raggio {Radius}km (distanza: {Distance:F2}km)",
+        _logger?.LogDebug("Punto ({PointLat}, {PointLon}) è {Status} dal centro ({CenterLat}, {CenterLon}) con raggio {Radius}km (distanza: {Distance:F2}km)",
             pointLat, pointLon, isInRadius ? "DENTRO" : "FUORI", centerLat, centerLon, radiusKm, distance);
 
         return isInRadius;
@@ -189,7 +189,7 @@ public class MapService : IMapService
         if (timeSinceLastRequest < _nominatimDelay)
         {
             var waitTime = _nominatimDelay - timeSinceLastRequest;
-            _logger?.LogDebug("⏳ Rate limit Nominatim: aspetto {WaitMs}ms", waitTime.TotalMilliseconds);
+            _logger?.LogDebug("Rate limit Nominatim: aspetto {WaitMs}ms", waitTime.TotalMilliseconds);
             await Task.Delay(waitTime);
         }
 
@@ -254,7 +254,7 @@ public class MapService : IMapService
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "⚠️ Errore formattazione indirizzo Nominatim");
+            _logger?.LogWarning(ex, "Errore formattazione indirizzo Nominatim");
             return response.DisplayName ?? "";
         }
     }
